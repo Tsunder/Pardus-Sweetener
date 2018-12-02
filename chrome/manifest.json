@@ -31,7 +31,11 @@
       "all_frames": true,
       "js": [ "cfgset.js", "universe.js", "onlinelist.js" ],
       "matches": [ "*://*.pardus.at/statistics.php?display=onlinelist" ]
-   } ],
+   }, {
+      "all_frames": true,
+	  "js" : [ "universe.js", "advskills.js" ],
+	  "matches" : [ "*://*.pardus.at/overview_advanced_skills.php"]
+   }   ],
    "content_security_policy": "script-src 'self'; object-src 'self'",
    "description": "User interface enhancements for the online game Pardus. Combines likuilin's, BartKieviet's, and Tsunder's forks. T for Tsunder",
    "icons": {

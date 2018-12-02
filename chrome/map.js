@@ -58,6 +58,38 @@ SectorMap.prototype = {
 		if ( this.canvas ) {
 			this.initCanvas();
 		}
+		
+		var universe = Universe.getServer( document );
+		chrome.storage.local.get( [ universe + 'advSkills' ], setVisc.bind( this, universe ) );
+		function setVisc( universe, data ) {
+			var VISC = { 
+				'f': 11, // fuel -> space
+				'g': 16, // nebula gas
+				'v': 18,
+				'e': 20,
+				'o': 25, // ore -> asteriods
+				'm': 36  // Exotic Matter
+			};
+			
+			// Parsing Navigation adv. skill.
+			if ( data[ universe + 'advSkills' ] ) { // checking if it's set first 
+				if ( data[ universe + 'advSkills' ][41] > 0 ) {
+					VISC[ 'o' ] -= 1;
+				}
+				if ( data[ universe + 'advSkills' ][41] > 1 ) {
+					VISC[ 'g' ] -= 1;
+				}
+				if ( data[ universe + 'advSkills' ][41] > 2 ) {
+					VISC[ 'e' ] -= 1;
+				}
+				this.Navigation = data[ universe + 'advSkills' ][41]; // saving the number for our speed calculation later
+			} else {
+				this.Navigation = 0;
+			}
+			this.VISC = VISC;
+			this.Navigation = data[ universe + 'advSkills' ][41];
+		}
+		
 	},
 
 	setCanvas: function( canvas, div ) {
@@ -160,16 +192,6 @@ SectorMap.prototype = {
 		v: '#ee0'	 // viral
 	},
 	
-	VISC: { 
-		'f': 11, // fuel -> space
-		'g': 16, // nebula gas
-		'v': 18,
-		'e': 20,
-		'o': 25, // ore -> asteriods
-		'm': 36  // Exotic Matter
-	},
-
-
 	initCanvas: function() {
 		this.canvas.width = this.width;
 		this.canvas.height = this.height;
@@ -302,7 +324,6 @@ SectorMap.prototype = {
 		var fields = ["Space", "Nebula", "Virus", "Energy", "Asteroid", "Exotic"];
 		var travelCosts = this.travelCosts;
 
-
 		var speed = getSpeed.call( this );
 
 		var tc = {
@@ -434,7 +455,13 @@ SectorMap.prototype = {
 			}
 			speed -= parseInt( moveField[0].textContent );
 			speed += this.VISC[ currentTileType ];
-
+			
+			if ( ( this.Navigation = 1 && currentTileType == 'o' )
+				|| ( this.Navigation = 2 && currentTileType == 'g' )
+			    || ( this.Navigation = 3 && currentTileType == 'e' ) ) {
+					speed += 1;
+				}
+			
 			return speed;
 		}
 	},
