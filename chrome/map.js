@@ -87,7 +87,6 @@ SectorMap.prototype = {
 				this.Navigation = 0;
 			}
 			this.VISC = VISC;
-			this.Navigation = data[ universe + 'advSkills' ][41];
 		}
 		
 	},
@@ -456,12 +455,11 @@ SectorMap.prototype = {
 			speed -= parseInt( moveField[0].textContent );
 			speed += this.VISC[ currentTileType ];
 			
-			if ( ( this.Navigation = 1 && currentTileType == 'o' )
-				|| ( this.Navigation = 2 && currentTileType == 'g' )
-			    || ( this.Navigation = 3 && currentTileType == 'e' ) ) {
+			if ( ( this.Navigation == 1 && currentTileType == 'o' )
+				|| ( this.Navigation == 2 && currentTileType == 'g' )
+			    || ( this.Navigation == 3 && currentTileType == 'e' ) ) {
 					speed += 1;
 				}
-			
 			return speed;
 		}
 	},
