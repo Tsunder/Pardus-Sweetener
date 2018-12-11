@@ -949,7 +949,7 @@ function getTimeDiff ( time1, time2 ) {
 	return diff
 }
 
-//Unused planned route highlighter
+//planned route highlighter
 function updateRoutePlanner( data ) {
 	let ukey = Universe.getServer ( doc ).substr( 0, 1 );
 	let path = data[ ukey + 'savedPath' ];
