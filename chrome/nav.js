@@ -1000,14 +1000,20 @@ function showMissions( data ) {
 	chrome.storage.local.get( getList, displayMissions.bind( null, list ) );
 	
 	function displayMissions( list, data ) {
-		
+	
 		// DOM stuff below.
+		
 		var t = document.createElement( 'table' );
 		t.width = 210;
 		t.setAttribute( 'cellpadding', 0 );
 		t.setAttribute( 'cellspacing', 0 );
 		t.border = 0;
-		var tr = t.appendChild( document.createElement( 'tr' ) );
+		t.id = 'missionDisplayTable';
+		
+		var tr = t.appendChild( document.getElementById( 'cargo' ).firstChild.lastChild.cloneNode( true ) );
+		tr.firstChild.firstChild.setAttribute( 'style', 'transform: rotateX(0.5turn);' );
+		
+		tr = t.appendChild( document.createElement( 'tr' ) );
 		var td = tr.appendChild( document.createElement( 'td' ) );
 		td.style = "background-image:url('//static.pardus.at/img/stdhq/panel.png');background-repeat:repeat-y;text-align:left;";
 		var div = td.appendChild( document.createElement( 'div' ) );
@@ -1018,7 +1024,7 @@ function showMissions( data ) {
 		tInside.width = '100%';
 		for( var i = 0; i < list.length; i++ ) {
 			var mission = data[ ukey + 'm' + list[ i ] ];
-			
+			console.log(mission);
 			tr = tInside.appendChild ( document.createElement( 'tr' ) );
 						
 			td = tr.appendChild( document.createElement( 'td' ) );
@@ -1026,11 +1032,17 @@ function showMissions( data ) {
 			img.src = mission.image;
 			img.height = 16;
 			td = tr.appendChild( document.createElement( 'td' ) );
-			td.textContent = mission.sector + " [" + mission.coords.x + ',' + mission.coords.y + ']';
+			if ( mission.locId > 0 ) {
+				td.textContent = mission.sector + " [" + mission.coords.x + ',' + mission.coords.y + ']' ;
+			} else {
+				td.textContent = mission.amount;
+			}
 			td = tr.appendChild( document.createElement( 'td' ) );
 			td.textContent = mission.reward;
 			td = tr.appendChild( document.createElement( 'td' ) );
 			td.textContent = mission.total;
+			/*td = tr.appendChild( document.createElement( 'td' ) );
+			td.textContent = mission.acceptTime + mission.;*/
 			
 		}
 		tr = tInside.appendChild( document.createElement( 'tr' ) );
@@ -1041,13 +1053,15 @@ function showMissions( data ) {
 		btn.textContent = 'clear';
 		btn.addEventListener( 'click', clearMissionStorage.bind( null, list, data ) );
 		
-		document.getElementById( 'cargo' ).parentNode.insertBefore( t, document.getElementById( 'cargo' ) );
-		
+		if ( !document.getElementById( 'missionDisplayTable' ) ) {
+			document.getElementById( 'cargo' ).parentNode.insertBefore( t, document.getElementById( 'cargo' ) );
+		}
 		function clearMissionStorage( list, data ) {
 			for( var i = 0; i < list.length; i++ ) {
 				chrome.storage.local.remove( ukey + 'm' + list[ i ] );
 			}
 			chrome.storage.local.remove( ukey + 'mlist' );
+			document.getElementById( 'missionDisplayTable' ).remove();
 		}
 	}
 }
