@@ -18,8 +18,9 @@
     }
 
     for( var i = 0; i < missions.length; i++) {
-        if ( i % 2 === 1 ) { continue; }
-		
+        if ( !premium && i % 2 === 1 ) { continue; }
+		if ( premium && i === 0 ) { continue; }
+			
 		let a = missions[i].getElementsByTagName( 'a' );		
 		a[ a.length - 1 ].addEventListener( 'click', clickedMission.bind( missions[i], premium ) );
     }
