@@ -1128,7 +1128,7 @@ function showMissions( data ) {
 					if ( a ) {
 						var reddiv = document.createElement( 'div' );
 						reddiv.className = 'sweetener-mission';
-						a.parentNode.appendChild( reddiv );
+						a.appendChild( reddiv );
 
 					}
 				}
