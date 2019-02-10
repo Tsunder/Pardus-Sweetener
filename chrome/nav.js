@@ -1116,9 +1116,15 @@ function showMissions( data ) {
 						navTable = document.getElementById( 'navarea' );
 					}
 
-					var a = document.evaluate( "../table[contains(@id, " + navTable.id + ")]//tr/td//a[contains(@onclick, '" + mission.locId + "')]" ,
-							   navTable, null, XPathResult.ANY_UNORDERED_NODE_TYPE,
-							   null ).singleNodeValue;
+					var a;
+					if (userloc == mission.locId) {
+						a = document.getElementById("stdCommand");
+					} 
+					else {
+						a = document.evaluate( "../table[contains(@id, " + navTable.id + ")]//tr/td//a[contains(@onclick, '" + mission.locId + "')]" ,
+								   navTable, null, XPathResult.ANY_UNORDERED_NODE_TYPE,
+								   null ).singleNodeValue;	
+					}
 					if ( a ) {
 						var reddiv = document.createElement( 'div' );
 						reddiv.className = 'sweetener-mission';
