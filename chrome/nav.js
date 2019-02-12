@@ -1059,9 +1059,7 @@ function showMissions( data ) {
 	
 	function displayMissions( list, data ) {
 		// DOM stuff below.
-		if (!list) {
-			return;
-		}
+		
 		var t = document.createElement( 'table' );
 		t.width = 210;
 		t.setAttribute( 'cellpadding', 0 );
