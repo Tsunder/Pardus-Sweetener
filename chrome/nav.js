@@ -1085,7 +1085,6 @@ function showMissions( data ) {
 		while ( document.getElementById( 'sweetener-mission' ) ) {
 			document.removeChild( document.getElementById( 'sweetener-mission' ) ); 
 		}
-		
 
 		var navTable = document.getElementById( 'navareatransition' );
 		if ( !navTable ) {
