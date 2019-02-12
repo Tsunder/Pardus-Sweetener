@@ -1084,11 +1084,8 @@ function showMissions( data ) {
 			document.removeChild( document.getElementById( 'sweetener-mission' ) ); 
 		}
 
-		var navTable = document.getElementById( 'navareatransition' );
-		if ( !navTable ) {
-			navTable = document.getElementById( 'navarea' );
-		}
-		var stdCommandElement = document.getElementById("stdCommand");
+		var navTable;
+		var stdCommandElement;
 
 		for( var i = 0; i < list.length; i++ ) {
 			var mission = data[ ukey + 'm' + list[ i ] ];
@@ -1117,8 +1114,19 @@ function showMissions( data ) {
 				if ( Sector.getIdFromLocation( userloc ) === Sector.getIdFromLocation( mission.locId ) ) {
 					// let coords = Sector.getCoords( Sector.getIdFromLocation( mission.locId ), mission.locId );
 					// minimap.markTile( minimap.get2DContext(), coords.x, coords.y ,'"#fff"');
+					
+					if ( !navTable ) {
+						navtable = document.getElementById( 'navareatransition' );
+						if (!navTable) {
+							navTable = document.getElementById( 'navarea' );
+						}
+					}
+					
 					var a;
 					if (userloc == mission.locId) {
+						if (!stdCommandElement) {
+							stdCommandElement = document.getElementById("stdCommand");
+						}
 						a = stdCommandElement;
 					} 
 					else {
