@@ -1114,7 +1114,6 @@ function showMissions( data ) {
 				if ( Sector.getIdFromLocation( userloc ) === Sector.getIdFromLocation( mission.locId ) ) {
 					// let coords = Sector.getCoords( Sector.getIdFromLocation( mission.locId ), mission.locId );
 					// minimap.markTile( minimap.get2DContext(), coords.x, coords.y ,'"#fff"');
-					
 					if ( !navTable ) {
 						navtable = document.getElementById( 'navareatransition' );
 						if (!navTable) {
