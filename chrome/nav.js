@@ -193,7 +193,7 @@ function onGameMessage( event ) {
 
 	userloc = parseInt( data.loc );
 	fieldsTotal = parseInt( data.fieldsTotal );
-	navSizeHor = parseInt( lodata.navSizeHor );
+	navSizeHor = parseInt( data.navSizeHor );
 	navSizeVer = parseInt( data.navSizeVer );
 	tileRes = parseInt( data.tileRes );
 	ajax = data.ajax;
