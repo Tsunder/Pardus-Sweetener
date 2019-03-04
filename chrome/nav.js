@@ -1006,7 +1006,7 @@ function getTimeDiff ( time1, time2 ) {
 function updateRoutePlanner( data ) {
     if ( highlightedRPTiles ) {
         // Clear up first
-        for ( let i=0; i < highlightedRPTiles.length; i++ ) {
+        for( let i=0; i < highlightedRPTiles.length; i++ ) {
             highlightedRPTiles[i].setAttribute( 'class', 
                 highlightedRPTiles[i].getAttribute( 'class' ).replace(
                 'sweetener-routeplanner', '') );
@@ -1124,9 +1124,14 @@ function showMissions( data ) {
 			//might be a bit slow for people who have lots of missions?
 			if (mission.locId) {
 				if ( Sector.getIdFromLocation( userloc ) === Sector.getIdFromLocation( mission.locId ) ) {
-					// let coords = Sector.getCoords( Sector.getIdFromLocation( mission.locId ), mission.locId );
-					// minimap.markTile( minimap.get2DContext(), coords.x, coords.y ,'"#fff"');
-					if ( !_navTable ) {
+					
+                    if ( minimap ) {
+                        // display of red mission markers
+                        let coords = Sector.getCoords( Sector.getIdFromLocation( mission.locId ), mission.locId );
+                        minimap.markTile( minimap.get2DContext(), coords.x, coords.y ,'#ff0000');
+					}
+                    
+                    if ( !_navTable ) {
 						_navTable = document.getElementById( 'navareatransition' );
 						if (!_navTable) {
 							_navTable = document.getElementById( 'navarea' );
