@@ -128,7 +128,7 @@ function start() {
 	cs.addKey( 'missionDisplay' );
     
     let ukey = Universe.getServer( document ).substr( 0, 1 );
-    cs.addKey( ukey + 'savedPath' );
+    cs.addKey( ukey + 'storedPath' );
 
 	shiplinks = new ShipLinks.Controller
 		( 'table/tbody/tr/td[position() = 2]/a', matchShipId );
@@ -155,7 +155,7 @@ function applyConfiguration() {
 
 		let ukey = Universe.getServer( doc ).substr( 0, 1 );
 		if ( config.displayNavigationEnabled ) {
-			let name = ukey + 'savedPath';
+			let name = ukey + 'storedPath';
 			chrome.storage.local.get( name , updateRoutePlanner );
 		}
 		if ( config.missionDisplay ) {
@@ -223,7 +223,7 @@ function onGameMessage( event ) {
 
 	let ukey = Universe.getServer ( doc ).substr( 0, 1 );
 	if ( config.displayNavigationEnabled ) {
-		let name = ukey + 'savedPath';
+		let name = ukey + 'storedPath';
 		chrome.storage.local.get( name , updateRoutePlanner );
 	}
 	if ( config.missionDisplay ) {
@@ -523,6 +523,10 @@ function configureMinimap( sector ) {
 	// just configure it, and remember the pertinent variables.
 	minimap = new SectorMap();
 	minimap.setCanvas( canvas, div );
+	minimap.configure( sector, size );
+	minimapContainer = container;
+	minimapSector = sector;
+
 	if (config.miniMapNavigation) {
 		//setup travel costs to pass to minimap
 		var travelCosts = {};
@@ -533,9 +537,6 @@ function configureMinimap( sector ) {
 
 		minimap.enablePathfinding(travelCosts);
 	}
-	minimap.configure( sector, size );
-	minimapContainer = container;
-	minimapSector = sector;
 
 	// And draw the map.
 	refreshMinimap();
@@ -1015,7 +1016,7 @@ function updateRoutePlanner( data ) {
     highlightedRPTiles = [];
         
 	let ukey = Universe.getServer ( doc ).substr( 0, 1 );
-	let idList = data[ ukey + 'savedPath' ];
+	let idList = data[ ukey + 'storedPath' ];
 
 	if ( !idList || idList.length === 0 )
 		return;
