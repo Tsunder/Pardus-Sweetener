@@ -90,10 +90,6 @@ var config, configured, userloc, ajax, shiplinks,
 // routeplanning.
 var navtable, navidx, highlightedTiles, navTilesXEval, highlightedRPTiles;
 
-//these fields must match those in options.js and map.js
-var fields = ["Space", "Nebula", "Virus", "Energy", "Asteroid", "Exotic"];
-var travelCosts;
-  
 //milliseconds
 var oneHour = 3600000;
 var halfHour = 1800000;
@@ -117,12 +113,6 @@ function start() {
 	cs.addKey( 'pathfindingEnabled' );
 	cs.addKey( 'clockD' );
 	cs.addKey( 'displayNavigationEnabled' );
-	
-	//for minimap navigation
-	var uni = ({a:"Artemis", o:"Orion", p:"Pegasus"})[Universe.getServer(doc).substr(0, 1)];
-	fields.forEach(function (f) {
-		cs.addKey( 'travelCost' + uni + f);
-	});
 	cs.addKey( 'miniMapNavigation' );
 	cs.addKey( 'clockStim' );
 	cs.addKey( 'missionDisplay' );
@@ -528,14 +518,7 @@ function configureMinimap( sector ) {
 	minimapSector = sector;
 
 	if (config.miniMapNavigation) {
-		//setup travel costs to pass to minimap
-		var travelCosts = {};
-		var uni = ({a:"Artemis", o:"Orion", p:"Pegasus"})[Universe.getServer(doc).substr(0, 1)];
-		fields.forEach(function (f) {
-			travelCosts[f] = config["travelCost" + uni + f];
-		});
-
-		minimap.enablePathfinding(travelCosts);
+		minimap.enablePathfinding();
 	}
 
 	// And draw the map.

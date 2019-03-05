@@ -123,8 +123,7 @@ SectorMap.prototype = {
 	},
 	
 	//attach events for mouseover path calculation
-	enablePathfinding: function(travelCosts) {
-		// this.travelCosts = travelCosts;
+	enablePathfinding: function() {
 		this.attachMouseEvents(this.canvas);
 		this.distanceDiv.style.display = "block";
 	},
@@ -363,8 +362,8 @@ SectorMap.prototype = {
 		this.markShipTile(this.get2DContext());
 		
 		//these fields must match those in options.js and map.js
-		var fields = ["Space", "Nebula", "Virus", "Energy", "Asteroid", "Exotic"];
-		var travelCosts = this.travelCosts;
+		//var fields = ["Space", "Nebula", "Virus", "Energy", "Asteroid", "Exotic"];
+		//var travelCosts = this.travelCosts;
 
 		var speed = getSpeed.call( this );
 
