@@ -357,19 +357,55 @@ SectorMap.prototype = {
 		}.bind(this));
 	},
 	
-	//draw the path from the current ship location to the mouse location, and
-	//calculate AP costs for it
-	drawPath: function (loc) {
+	// draw the path from the current ship location to the mouse location, 
+	// and calculate AP costs for it via planPath.
+	drawPath: function( loc ) {
 		this.clear(this.get2DContext());
 		this.markShipTile(this.get2DContext());
 		
-		//these fields must match those in options.js and map.js
-		//var fields = ["Space", "Nebula", "Virus", "Energy", "Asteroid", "Exotic"];
-		//var travelCosts = this.travelCosts;
-
-		var speed = getSpeed.call( this );
-
-		var tc = {
+		let path = this.planPath( loc, {'x': this.shipX, 'y': this.shipY }, this.sector );
+        this.savedPath = path.path;
+        
+		this.drawSavedPath(this.get2DContext());
+		this.markShipTile(this.get2DContext());
+		this.distanceDiv.innerHTML = "Distance to " + this.sector.sector 
+            + " [" + loc.x + ", " + loc.y + "]: " 
+            + path.apsSpent 
+            + " APs<br>&nbsp;"; //innerHTML to accomodate infinity symbol
+		
+	},
+    
+    getSpeed: function() {
+        // function calculates speed (as in the Pardus Manual), allowing for 
+        // boost, stims, etc. XXX still needs to be tested with legendary.
+        
+        let currentTileType = this.sector.tiles[ this.shipX 
+            + this.sector.width * this.shipY ];
+        let moveField = document.getElementById('tdStatusMove').childNodes;
+        let speed = 0;
+        if ( moveField.length > 1 ) { //something modifies our speed 
+            speed -= parseInt( moveField[1].childNodes[0].textContent );
+        }
+        speed -= parseInt( moveField[0].textContent );
+        speed += this.VISC[ currentTileType ];
+        
+        if ( ( this.Navigation == 1 && currentTileType == 'o' )
+            || ( this.Navigation == 2 && currentTileType == 'g' )
+            || ( this.Navigation == 3 && currentTileType == 'e' ) ) {
+                speed += 1;
+            }
+        return speed;
+    },
+        
+    // In planPath, we do a BFS across the entire sector with respect to the 
+    // cost, stopping when either the state is the same for 100 AP's 
+    // (unreachable) or we've reached the location.
+    // loc and fromLoc are both a dictionary with x and y as keys, sector is the 
+    // sector (see /map/ and onwards for examples).
+    planPath: function( loc, fromLoc, sector ) {
+        // first get the travel costs per tile type: tc
+        let speed = this.getSpeed();
+        var tc = { 
 			b: -1,
 			'f': this.VISC[ 'f' ] - speed, // fuel -> space
 			'g': this.VISC[ 'g' ] - speed, // nebula gas
@@ -378,130 +414,111 @@ SectorMap.prototype = {
 			'o': this.VISC[ 'o' ] - speed, // ore -> asteriods
 			'm': this.VISC[ 'm' ] - speed  // Exotic Matter
 		};
-		
-		//here, we do a BFS across the entire sector with respect to the cost, stopping when either the state is the same for 100 AP's (unreachable) or we've reached the location
-		var i,j;
-		var bfsState = [];
-		var costFromTile = []; //quickly lookup the cost of travelling from any tile, without string fluffery
-		
-		for (i=0;i<this.sector.height;i++) {
-			bfsState.push([]);
-			costFromTile.push([]);
-			for (j=0;j<this.sector.width;j++) {
-				bfsState[i].push([-1, -1, -1]); //[previous X, previous Y, distance]
-				costFromTile[i].push(~~tc[this.sector.tiles.charAt(i * this.sector.width + j)]);
-			}
-		}
-		bfsState[this.shipY][this.shipX] = [0, this.shipY, this.shipX]; //mark current location as zero distance
-		
-		var apsSpent = 0;
-		//if current tile is unreachable, then lol
-		if (costFromTile[loc.y][loc.x] != -1) {
-			var unreachableCounter = 0; //reset on map state change, incremented on 1AP spent, marked unreachable when it reaches 100
-			while (unreachableCounter < 100) {
-				//copy bfsState
-				var nextBfsState = [];
-				for (i=0;i<this.sector.height;i++) {
-					nextBfsState.push([]);
-					for (j=0;j<this.sector.width;j++) nextBfsState[i].push(bfsState[i][j].slice());
-				}
-				
-				for (i=0;i<this.sector.height;i++) for (j=0;j<this.sector.width;j++) {
-					if (bfsState[i][j][0] == -1) continue; //not visited yet
-					
-					var processPath = function (curX, curY, nextX, nextY, isDiagonal) { //isDiagonal is used to favor non-diagonal movement when costs are equal, because humans click those easier
-						if (nextX < 0 || nextX >= this.sector.height || nextY < 0 || nextY >= this.sector.width) return;
-						
-						var cost = bfsState[curX][curY][0] + costFromTile[curX][curY];
-						if (costFromTile[nextX][nextY] == -1) return; //the way is blocked, cannot go
-						if (cost > apsSpent) return; //too much cost currently
-						
-						if (nextBfsState[nextX][nextY][0] == -1 || nextBfsState[nextX][nextY][0] > cost || (nextBfsState[nextX][nextY][0] == cost && !isDiagonal)) {
-							nextBfsState[nextX][nextY] = [cost, curX, curY];
-							if (nextBfsState[nextX][nextY].join(",") != bfsState[nextX][nextY].join(","))
-								unreachableCounter = 0;
-						}
-					}.bind(this);
-					
-					processPath(i, j, i-1, j-1, true);
-					processPath(i, j, i-1, j  , false);
-					processPath(i, j, i-1, j+1, true);
-					processPath(i, j, i  , j-1, false);
-					processPath(i, j, i  , j+1, false);
-					processPath(i, j, i+1, j-1, true);
-					processPath(i, j, i+1, j  , false);
-					processPath(i, j, i+1, j+1, true);
-				}
-				
-				bfsState = nextBfsState;
-				
-				/* //uncomment to debug
-				var d = "";
-				for (i=0;i<this.sector.height;i++) {
-					for (j=0;j<this.sector.width;j++) {
-						d += bfsState[i][j][0] + "\t";
-					}
-					d += "\n"
-				}
-				console.log(d);
-				//*/
-				
-				//break if we've found a path
-				if (bfsState[loc.y][loc.x][0] != -1) break;
-				
-				unreachableCounter++;
-				apsSpent++;
-				
-				if (apsSpent >= 10000) break; //sanity check
-			}
-		}
-		
-		var endState = bfsState[loc.y][loc.x];
-		if (endState[0] == -1) {
-			apsSpent = "&infin;";
-			this.savedPath = [[loc.x, loc.y]];
-		} else {
-			//if we have found a path, we know it's min length because all the previous iterations did not end here.
-			//now we iterate backwards until we get to the ship
-			i = loc.y;
-			j = loc.x;
-			var path = [];
-			var sanityCheck = 0;
-			while (!(i == this.shipY && j == this.shipX) && sanityCheck++ < 10000) {
-				path.push([j, i]);
-				var state = bfsState[i][j];
-				i = state[1];
-				j = state[2];
-			}
-			path.push([this.shipX, this.shipY]);
-			this.savedPath = path;
-		}
-		this.drawSavedPath(this.get2DContext());
-		this.markShipTile(this.get2DContext());
-		this.distanceDiv.innerHTML = "Distance to " + this.sector.sector + " [" + loc.x + ", " + loc.y + "]: " + apsSpent + " APs<br>&nbsp;"; //innerHTML to accomodate infinity symbol
-		
-		// I put the function at the end to keep clutter down. Currently only used in drawpath.
-		function getSpeed() {
-			// function calculates speed (as in the Pardus Manual), allowing for boost, stims, etc. XXX still needs to be tested with legendary.
-			
-			let currentTileType = this.sector.tiles[ this.shipX + this.sector.width * this.shipY ];
-			let moveField = document.getElementById('tdStatusMove').childNodes;
-			let speed = 0;
-			if ( moveField.length > 1 ) { //something modifies our speed 
-				speed -= parseInt( moveField[1].childNodes[0].textContent );
-			}
-			speed -= parseInt( moveField[0].textContent );
-			speed += this.VISC[ currentTileType ];
-			
-			if ( ( this.Navigation == 1 && currentTileType == 'o' )
-				|| ( this.Navigation == 2 && currentTileType == 'g' )
-			    || ( this.Navigation == 3 && currentTileType == 'e' ) ) {
-					speed += 1;
-				}
-			return speed;
-		}
-	},
-
+        
+        var i,j;
+        var bfsState = [];
+        var costFromTile = []; //quickly lookup the cost of travelling from any tile, without string fluffery
+        
+        for  ( i=0; i<sector.height; i++ ) {
+            bfsState.push([]);
+            costFromTile.push([]);
+            for ( j=0 ; j<sector.width; j++) {
+                bfsState[i].push([-1, -1, -1]); //[previous X, previous Y, distance]
+                costFromTile[i].push(~~tc[sector.tiles.charAt(i * sector.width + j)]);
+            }
+        }
+        bfsState[fromLoc.y][fromLoc.x] = [0, fromLoc.y, fromLoc.x]; //mark current location as zero distance
+        
+        var apsSpent = 0;
+        //if current tile is unreachable, then lol
+        if (costFromTile[loc.y][loc.x] == -1) {
+            apsSpent = "&infin;";
+            return { 'path': [[loc.x, loc.y]], 'apsSpent': apsSpent };           
+        }
+            
+        var unreachableCounter = 0; //reset on map state change, incremented on 1AP spent, marked unreachable when it reaches 100
+        while (unreachableCounter < 100) {
+            //copy bfsState
+            var nextBfsState = [];
+            for (i=0;i<sector.height;i++) {
+                nextBfsState.push([]);
+                for (j=0;j<sector.width;j++) nextBfsState[i].push(bfsState[i][j].slice());
+            }
+            
+            for (i=0;i<sector.height;i++) { 
+                for (j=0;j<sector.width;j++) {
+                    if (bfsState[i][j][0] == -1) 
+                        continue; //not visited yet
+                    
+                    var processPath = function (curX, curY, nextX, nextY, isDiagonal) { //isDiagonal is used to favor non-diagonal movement when costs are equal, because humans click those easier
+                        if (nextX < 0 || nextX >= sector.height || nextY < 0 || nextY >= sector.width) return;
+                        
+                        var cost = bfsState[curX][curY][0] + costFromTile[curX][curY];
+                        if (costFromTile[nextX][nextY] == -1) return; //the way is blocked, cannot go
+                        if (cost > apsSpent) return; //too much cost currently
+                        
+                        if (nextBfsState[nextX][nextY][0] == -1 || nextBfsState[nextX][nextY][0] > cost || (nextBfsState[nextX][nextY][0] == cost && !isDiagonal)) {
+                            nextBfsState[nextX][nextY] = [cost, curX, curY];
+                            if (nextBfsState[nextX][nextY].join(",") != bfsState[nextX][nextY].join(","))
+                                unreachableCounter = 0;
+                        }
+                    }.bind(this);
+                    
+                    for (var m=-1; m<2;m++) {
+                        for (var n=-1; n<2;n++) {
+                            if ( m===0 && n===0 )
+                                continue; // skip 0,0
+                            processPath(i, j, i+m, j+n, Math.abs(m)===Math.abs(n) );
+                        }
+                    }
+                }
+            }
+            
+            bfsState = nextBfsState;
+            
+            /* //uncomment to debug
+            var d = "";
+            for (i=0;i<this.sector.height;i++) {
+                for (j=0;j<this.sector.width;j++) {
+                    d += bfsState[i][j][0] + "\t";
+                }
+                d += "\n"
+            }
+            console.log(d);
+            //*/
+            
+            //break if we've found a path
+            if (bfsState[loc.y][loc.x][0] != -1) break;
+            
+            unreachableCounter++;
+            apsSpent++;
+            
+            if (apsSpent >= 10000) break; //sanity check
+        }
+    
+        
+        var endState = bfsState[loc.y][loc.x];
+        if (endState[0] == -1) {
+            apsSpent = "&infin;";
+            return { 'path': [[loc.x, loc.y]], 'apsSpent': apsSpent };
+        } else {
+            //if we have found a path, we know it's min length because all the previous iterations did not end here.
+            //now we iterate backwards until we get to the ship
+            i = loc.y;
+            j = loc.x;
+            var path = [];
+            var sanityCheck = 0;
+            while (!(i == fromLoc.y && j == fromLoc.x) && sanityCheck++ < 10000) {
+                path.push([j, i]);
+                var state = bfsState[i][j];
+                i = state[1];
+                j = state[2];
+            }
+            path.push([fromLoc.x, fromLoc.y]);
+            return { 'path': path, 'apsSpent': apsSpent };
+        }
+    },
+        
 	// Compute the tile size and whether we'll draw grid lines.
 	//
 	// The aim is to fit the given number of tiles in the given number
@@ -590,6 +607,7 @@ SectorMap.prototype = {
             div.appendChild( br );
             div.appendChild( btn );
         // }
+        
 
     }
 };
