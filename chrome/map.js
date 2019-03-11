@@ -27,6 +27,7 @@ SectorMap.prototype = {
         // displayed on the nav area.
         this.savedPath = [];
         this.storedPath = [];
+        this.travelCostCalculator();
 
 		var cols = sector.width, rows = sector.height, tiles = sector.tiles;
 
@@ -81,6 +82,7 @@ SectorMap.prototype = {
             this.drawSavedPath( this.get2DContext(), this.storedPath );
         }
 
+        // I don't recall why we don't use ukey here. Might fix that later.
 		var universe = Universe.getServer( document );
 		chrome.storage.local.get( [ universe + 'advSkills' ], setVisc.bind( this, universe ) );
 		function setVisc( universe, data ) {
@@ -542,5 +544,52 @@ SectorMap.prototype = {
 
 		this.tileSize = size;
 		this.grid = grid;
-	}
+	},
+    
+    travelCostCalculator: function() {
+        // chrome.runtime.sendMessage( { requestMap: 'Sol' }, logIt );
+        // function logIt( data ) {
+            // console.log(data);
+        // }
+        var div = document.createElement( 'div' );
+        var selectNode = document.createElement( 'select' );
+        selectNode.id = 'sweetener-TCC-sector';
+        div.textContent = 'Travel to: ';
+        div.appendChild( selectNode );
+        var cat = Sector.getCatalogue(), opt;
+        for ( var i = 0; i < cat.length; i++ ) {
+            opt = document.createElement( 'option' );
+            if ( i === 0 ) {
+                opt.text = 'Where to?';
+            } else {
+                opt.text = cat[i].n;
+            }
+            selectNode.add( opt );
+        }
+        this.distanceDiv.parentNode.appendChild( div );
+        // selectNode.addEventListener( 'change', chosenSector );
+        // function chosenSector() {
+            let br = document.createElement( 'br' );
+            let x = document.createElement( 'input' );
+            x.type = 'number';
+            x.max = 100;
+            x.setAttribute( 'style', 'width: 3em');
+            let y = document.createElement( 'input' );
+            y.type = 'number';
+            y.max = 100;
+            y.setAttribute( 'style', 'width: 3em');
+            div.appendChild( br );
+            div.appendChild( x );
+            div.appendChild( y );
+            // y.addEventListener( 'change', chosenCoords );
+        // }
+        // function chosenCoords() { //change br to let br below when uncommenting
+            let btn = document.createElement( 'button' );
+            btn.textContent = 'plan';
+            br = document.createElement( 'br' );
+            div.appendChild( br );
+            div.appendChild( btn );
+        // }
+
+    }
 };

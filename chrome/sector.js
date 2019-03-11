@@ -464,6 +464,10 @@ Sector.getIdFromLocation = function( location ) {
 	return sectorId;
 }
 
+Sector.getCatalogue = function() {
+    return CATALOGUE;
+}
+
 return Sector;
 
 })();
