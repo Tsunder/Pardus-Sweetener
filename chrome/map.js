@@ -28,6 +28,7 @@ SectorMap.prototype = {
         this.savedPath = [];
         this.storedPath = [];
         this.travelCostCalculator();
+        this.TCCData = {};
 
 		var cols = sector.width, rows = sector.height, tiles = sector.tiles;
 
@@ -565,16 +566,17 @@ SectorMap.prototype = {
     
     travelCostCalculator: function() {
         // chrome.runtime.sendMessage( { requestMap: 'Sol' }, logIt );
-        // function logIt( data ) {
-            // console.log(data);
-        // }
+        function logIt( data ) {
+            console.log(data);
+            console.log(this.sector);
+        }
         var div = document.createElement( 'div' );
         var selectNode = document.createElement( 'select' );
         selectNode.id = 'sweetener-TCC-sector';
         div.textContent = 'Travel to: ';
         div.appendChild( selectNode );
         var cat = Sector.getCatalogue(), opt;
-        for ( var i = 0; i < cat.length; i++ ) {
+        for ( var i = 1; i < cat.length; i++ ) {
             opt = document.createElement( 'option' );
             if ( i === 0 ) {
                 opt.text = 'Where to?';
@@ -583,6 +585,7 @@ SectorMap.prototype = {
             }
             selectNode.add( opt );
         }
+        selectNode.value = 'Zeaex';
         this.distanceDiv.parentNode.appendChild( div );
         // selectNode.addEventListener( 'change', chosenSector );
         // function chosenSector() {
@@ -590,11 +593,15 @@ SectorMap.prototype = {
             let x = document.createElement( 'input' );
             x.type = 'number';
             x.max = 100;
+            x.value = 5;
             x.setAttribute( 'style', 'width: 3em');
+            x.id = 'sweetener-TCC-x';
             let y = document.createElement( 'input' );
             y.type = 'number';
             y.max = 100;
+            y.value = 2;
             y.setAttribute( 'style', 'width: 3em');
+            y.id = 'sweetener-TCC-y';
             div.appendChild( br );
             div.appendChild( x );
             div.appendChild( y );
@@ -607,6 +614,93 @@ SectorMap.prototype = {
             div.appendChild( br );
             div.appendChild( btn );
         // }
+        
+        btn.addEventListener( 'click', function() {
+            chrome.runtime.sendMessage( { requestMap: 'Universe' }, calcPath.bind(this) ) 
+        }.bind(this) );
+        
+        function calcPath( universeMap ) {
+            // let r = ( 
+                    // ( universeMap[ toSector ].x 
+                        // - universeMap[ this.sector.sector ].x )**2 
+                    // + 
+                    // ( universeMap[ toSector ].y 
+                        // - universeMap[ this.sector.sector ].y )**2 
+                // ) ** (1/2);
+            // console.log(r)
+            
+            let sectors = Object.keys( universeMap );
+            this.TCCData[ 'length' ] = sectors.length + 1;
+            for (var i = 0; i< sectors.length; i++) {
+                chrome.runtime.sendMessage( { requestMap: sectors[i] }, getData.bind(this) );
+            }          
+        
+            // {
+            // var toLoc = {
+                // 'x': parseInt(document.getElementById( 'sweetener-TCC-x' ).value),
+                // 'y': parseInt(document.getElementById( 'sweetener-TCC-y' ).value)
+            // }; 
+
+            // var path = {}
+            // let beacons = Object.entries( toSector.beacons );
+            // for ( var i=0; i<beacons.length; i++ ) {
+                // if ( beacons[i][1].type === 'wh' ) {
+                    // path[ beacons[i][0] ] = this.planPath( 
+                        // { 
+                        // 'x': beacons[i][1].x,
+                        // 'y': beacons[i][1].y 
+                        // }, 
+                        // toLoc, 
+                        // toSector );
+                    // path[ beacons[i][0] ].from = toSector.sector;
+                // }
+            // }
+            // this.TCCData[ toSector.sector ] = toSector;
+
+        }
+
+        function getData ( sector ) {
+            this.TCCData[ sector.sector ] = sector;
+            if ( Object.keys(this.TCCData).length === this.TCCData.length )
+                gotData.call(this);
+        }
+        
+        function gotData() {
+            let toSector = document.getElementById( 'sweetener-TCC-sector' ).value;
+            var toLoc = {
+                'x': parseInt(document.getElementById( 'sweetener-TCC-x' ).value),
+                'y': parseInt(document.getElementById( 'sweetener-TCC-y' ).value)
+            } 
+            processSector.call(this);
+        }
+        function processSector() {
+            
+            var path = {}, firstWHLoc;
+            // get rid of non wh/xh beacons
+            let beacons = Object.entries( this.sector.beacons ).filter( 
+                function( value, index, arr ) {
+                    return value[1].type === 'wh' || value[1].type === 'xh'
+                } );
+            
+            for ( var i=0; i<beacons.length - 1 ; i++ ) {
+                        console.log(beacons[i][1].x);
+                    for (var j=i+1; j < beacons.length ; j++)
+                        path[ this.sector.sector ] = this.planPath( 
+                            { 
+                                'x': beacons[j][1].x,
+                                'y': beacons[j][1].y 
+                            }, 
+                            {
+                                'x': beacons[i][1].x,
+                                'y': beacons[i][1].y 
+                            },
+                            this.sector );
+                        path[ this.sector.sector ].sector = this.sector.sector;
+                }
+                console.log(path);
+            // }
+            // return path;
+        }
         
 
     }
