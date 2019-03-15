@@ -621,58 +621,49 @@ SectorMap.prototype = {
         }.bind(this) );
         
         function calcPath( universeMap ) {
-            // let r = ( 
-                    // ( universeMap[ toSector ].x 
-                        // - universeMap[ this.sector.sector ].x )**2 
-                    // + 
-                    // ( universeMap[ toSector ].y 
-                        // - universeMap[ this.sector.sector ].y )**2 
-                // ) ** (1/2);
+            this.toSector = document.getElementById( 'sweetener-TCC-sector' ).value;
+            this.toLoc = {
+                'x': parseInt(document.getElementById( 'sweetener-TCC-x' ).value),
+                'y': parseInt(document.getElementById( 'sweetener-TCC-y' ).value)
+                };
+                
+            let r = ( 
+                    ( universeMap[ this.toSector ].x 
+                        - universeMap[ this.sector.sector ].x )**2 
+                    + 
+                    ( universeMap[ this.toSector ].y 
+                        - universeMap[ this.sector.sector ].y )**2 
+                ) ** (1/2);
             // console.log(r)
             
-            let sectors = Object.keys( universeMap );
+            // get the sectors that are close, to save computation time.
+            let sectors = Object.keys( universeMap ).filter( 
+                function( value, index, arr ) {
+                    let d = ( 
+                        ( universeMap[ value ].x 
+                            - universeMap[ this.sector.sector ].x )**2 
+                        + 
+                        ( universeMap[ value ].y 
+                            - universeMap[ this.sector.sector ].y )**2 
+                        ) ** (1/2);
+                    return d < r + 2
+                }.bind(this) );
+            console.log(sectors);
             this.TCCData[ 'length' ] = sectors.length + 1;
             for (var i = 0; i< sectors.length; i++) {
                 chrome.runtime.sendMessage( { requestMap: sectors[i] }, getData.bind(this) );
             }          
-        
-            // {
-            // var toLoc = {
-                // 'x': parseInt(document.getElementById( 'sweetener-TCC-x' ).value),
-                // 'y': parseInt(document.getElementById( 'sweetener-TCC-y' ).value)
-            // }; 
-
-            // var path = {}
-            // let beacons = Object.entries( toSector.beacons );
-            // for ( var i=0; i<beacons.length; i++ ) {
-                // if ( beacons[i][1].type === 'wh' ) {
-                    // path[ beacons[i][0] ] = this.planPath( 
-                        // { 
-                        // 'x': beacons[i][1].x,
-                        // 'y': beacons[i][1].y 
-                        // }, 
-                        // toLoc, 
-                        // toSector );
-                    // path[ beacons[i][0] ].from = toSector.sector;
-                // }
-            // }
-            // this.TCCData[ toSector.sector ] = toSector;
-
         }
 
         function getData ( sector ) {
             this.TCCData[ sector.sector ] = sector;
-            //this.TCCSectors = processSector.call( this, sector );
+            this.TCCSectors[ sector.sector ] = processSector.call( this, sector );
             if ( Object.keys(this.TCCData).length === this.TCCData.length )
                 gotData.call(this);
         }
         
         function gotData() {
-            let toSector = document.getElementById( 'sweetener-TCC-sector' ).value;
-            var toLoc = {
-                'x': parseInt(document.getElementById( 'sweetener-TCC-x' ).value),
-                'y': parseInt(document.getElementById( 'sweetener-TCC-y' ).value)
-            } 
+            console.log(this.TCCSectors);
         }
         function processSector( sector ) {
             var path = {};
