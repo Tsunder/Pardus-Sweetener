@@ -27,8 +27,9 @@ SectorMap.prototype = {
         // displayed on the nav area.
         this.savedPath = [];
         this.storedPath = [];
-        this.travelCostCalculator();
         this.TCCData = {};
+        this.TCCSectors = {};
+        this.travelCostCalculator();
 
 		var cols = sector.width, rows = sector.height, tiles = sector.tiles;
 
@@ -661,6 +662,7 @@ SectorMap.prototype = {
 
         function getData ( sector ) {
             this.TCCData[ sector.sector ] = sector;
+            //this.TCCSectors = processSector.call( this, sector );
             if ( Object.keys(this.TCCData).length === this.TCCData.length )
                 gotData.call(this);
         }
@@ -671,37 +673,42 @@ SectorMap.prototype = {
                 'x': parseInt(document.getElementById( 'sweetener-TCC-x' ).value),
                 'y': parseInt(document.getElementById( 'sweetener-TCC-y' ).value)
             } 
-            processSector.call(this);
         }
-        function processSector() {
-            
-            var path = {}, firstWHLoc;
+        function processSector( sector ) {
+            var path = {};
             // get rid of non wh/xh beacons
-            let beacons = Object.entries( this.sector.beacons ).filter( 
+            let beacons = Object.entries( sector.beacons ).filter( 
                 function( value, index, arr ) {
                     return value[1].type === 'wh' || value[1].type === 'xh'
                 } );
+            beacons.sort();
             
-            for ( var i=0; i<beacons.length - 1 ; i++ ) {
-                        console.log(beacons[i][1].x);
-                    for (var j=i+1; j < beacons.length ; j++)
-                        path[ this.sector.sector ] = this.planPath( 
-                            { 
-                                'x': beacons[j][1].x,
-                                'y': beacons[j][1].y 
-                            }, 
-                            {
-                                'x': beacons[i][1].x,
-                                'y': beacons[i][1].y 
-                            },
-                            this.sector );
-                        path[ this.sector.sector ].sector = this.sector.sector;
+            // We calculate the from each WH to the other. Saving it as a 
+            // dictionary { whname : { towhname { 'path', 'apsSpent' } } }.
+            // so for example path.Beethi.Canexin gives the path and apsSpent
+            // going from Beethi to Canexin.
+            // Note: we have to calculate both ways, so B -> C and C -> B, 
+            // in the case start tiles are different, the apsSpent will vary.
+            for ( var i=0; i<beacons.length; i++ ) {
+                path[ beacons[i][0] ] = {};
+                for (var j=0; j < beacons.length ; j++) {
+                    if (j===i || beacons[i][0] == beacons[j][0]) // no need for self to self.
+                        continue;
+                    path[ beacons[i][0] ][ beacons[j][0] ] = this.planPath( 
+                        { 
+                            'x': beacons[j][1].x,
+                            'y': beacons[j][1].y 
+                        }, 
+                        {
+                            'x': beacons[i][1].x,
+                            'y': beacons[i][1].y 
+                        },
+                        sector );
                 }
-                console.log(path);
-            // }
-            // return path;
+            }
+            // console.log(path);
+            return path;
         }
-        
 
     }
 };
