@@ -407,28 +407,28 @@ SectorMap.prototype = {
 				for (i=0;i<this.sector.height;i++) for (j=0;j<this.sector.width;j++) {
 					if (bfsState[i][j][0] == -1) continue; //not visited yet
 					
-					var processPath = function (curX, curY, nextX, nextY, isDiagonal) { //isDiagonal is used to favor non-diagonal movement when costs are equal, because humans click those easier
+					var processPath = function (curX, curY, nextX, nextY) { // finding the next tile
 						if (nextX < 0 || nextX >= this.sector.height || nextY < 0 || nextY >= this.sector.width) return;
 						
 						var cost = bfsState[curX][curY][0] + costFromTile[curX][curY];
 						if (costFromTile[nextX][nextY] == -1) return; //the way is blocked, cannot go
 						if (cost > apsSpent) return; //too much cost currently
 						
-						if (nextBfsState[nextX][nextY][0] == -1 || nextBfsState[nextX][nextY][0] > cost || (nextBfsState[nextX][nextY][0] == cost && !isDiagonal)) {
+						if (nextBfsState[nextX][nextY][0] == -1 || nextBfsState[nextX][nextY][0] > cost ) {
 							nextBfsState[nextX][nextY] = [cost, curX, curY];
 							if (nextBfsState[nextX][nextY].join(",") != bfsState[nextX][nextY].join(","))
 								unreachableCounter = 0;
 						}
 					}.bind(this);
 					
-					processPath(i, j, i-1, j-1, true);
-					processPath(i, j, i-1, j  , false);
-					processPath(i, j, i-1, j+1, true);
-					processPath(i, j, i  , j-1, false);
-					processPath(i, j, i  , j+1, false);
-					processPath(i, j, i+1, j-1, true);
-					processPath(i, j, i+1, j  , false);
-					processPath(i, j, i+1, j+1, true);
+					processPath(i, j, i-1, j-1);
+					processPath(i, j, i-1, j  );
+					processPath(i, j, i-1, j+1);
+					processPath(i, j, i  , j-1);
+					processPath(i, j, i  , j+1);
+					processPath(i, j, i+1, j-1);
+					processPath(i, j, i+1, j  );
+					processPath(i, j, i+1, j+1);
 				}
 				
 				bfsState = nextBfsState;
