@@ -569,11 +569,6 @@ SectorMap.prototype = {
 	},
     
     travelCostCalculator: function() {
-        // chrome.runtime.sendMessage( { requestMap: 'Sol' }, logIt );
-        // function logIt( data ) {
-            // console.log(data);
-            // console.log(this.sector);
-        // }
         var div = document.createElement( 'div' );
         var selectNode = document.createElement( 'select' );
         selectNode.id = 'sweetener-TCC-sector';
@@ -637,7 +632,6 @@ SectorMap.prototype = {
                     ( universeMap[ this.toSector ].y 
                         - universeMap[ this.sector.sector ].y )**2 
                 ) ** (1/2);
-            // console.log(r)
             
             // get the sectors that are close, to save computation time.
             let sectors = Object.keys( universeMap ).filter( 
@@ -658,6 +652,7 @@ SectorMap.prototype = {
                         ) ** (1/2);
                     return ( dfrom < r  || dto < r  )
                 }.bind(this) );
+            
             this.TCCLength = sectors.length;
             for (var i = 0; i< sectors.length; i++) {
                 chrome.runtime.sendMessage( { requestMap: sectors[i] }, getData.bind(this) );
@@ -668,7 +663,8 @@ SectorMap.prototype = {
             this.TCCData[ sector.sector ] = sector;
 			this.TCCData[ sector.sector ].distance = Infinity;
 			this.TCCData[ sector.sector ].visited = false;
-			this.TCCData[ sector.sector ].path = -1;
+			this.TCCData[ sector.sector ].path = [];
+            // this.TCCData[ sector.sector ].jumps = 0;
             // below takes a lot of time; doing this once for all speeds for all
             // sectors and storing it saves *a lot* of time.
             // this.TCCData[ currentSector ].wh = processSector.call( 
@@ -678,7 +674,8 @@ SectorMap.prototype = {
         }
         
         function gotData() {
-            /* 1. Mark all nodes unvisited. Create a set of all the unvisited nodes called the unvisited set.
+            /* 1. 
+            Mark all nodes unvisited. Create a set of all the unvisited nodes called the unvisited set.
             2. Assign to every node a tentative distance value: set it to zero for our initial node and to infinity for all other nodes. Set the initial node as current.
             3. For the current node, consider all of its unvisited neighbors and calculate their tentative distances through the current node. Compare the newly calculated tentative distance to the current assigned value and assign the smaller one. For example, if the current node A is marked with a distance of 6, and the edge connecting it with a neighbor B has length 2, then the distance to B through A will be 6 + 2 = 8. If B was previously marked with a distance greater than 8 then change it to 8. Otherwise, keep the current value.
             4. When we are done considering all of the unvisited neighbors of the current node, mark the current node as visited and remove it from the unvisited set. A visited node will never be checked again.
@@ -707,12 +704,14 @@ SectorMap.prototype = {
                      path.apsSpent += this.TCCWHcost;
                  }
                 this.TCCData[ nearestNeighborList[i][0] ].distance = path.apsSpent;
-                this.TCCData[ nearestNeighborList[i][0] ].path = path.path; 
+                this.TCCData[ nearestNeighborList[i][0] ].path.push( currentSector ); 
+                // this.TCCData[ nearestNeighborList[i][0] ].jumps = 1;                
             }
             this.TCCData[ this.toSector ].visited = true;
-            
+            var previousSector = this.toSector;
+
             // Right, now we have the distance to the WHs, let's do Dijkstra Magic.
-            // while( !this.TCCData[ this.sector.sector.visited ] )
+            while( !this.TCCData[ this.sector.sector.visited ] ) {
                 // get smallest distance node, so we remove all visited and sort
                 // according to distance, and get number 0.
                 currentSector = Object.entries( this.TCCData ).filter( 
@@ -721,12 +720,30 @@ SectorMap.prototype = {
                 } ).sort( function( a, b ) {
                     return a[1].distance - b[1].distance;
                 })[0][0];
-                console.log(currentSector);
                 // let nearestNeighborList = Object.keys( this.TCCData[ currentSector ].wh )
                 this.TCCData[ currentSector ].wh = processSector.call( 
                     this, this.TCCData[ currentSector ] );
-                console.log(this.TCCData[ currentSector]);
-            // }
+
+                previousSector = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 1 ]; 
+                console.log( 'From: ' + previousSector + ' in: ' + currentSector );
+                // now update distances and path.
+                let keys = Object.keys( this.TCCData[ currentSector ].wh[ previousSector ] );
+
+                for ( let i=0; i<keys.length; i++ ) {
+                    if ( this.TCCData[ keys[i] ].distance 
+                        > this.TCCData[ currentSector ].distance 
+                            + this.TCCData[ currentSector ].wh[ previousSector ][ keys[i] ].apsSpent ) {
+                        
+                        this.TCCData[ keys[i] ].distance = this.TCCData[ currentSector ].distance 
+                            + this.TCCData[ currentSector ].wh[ previousSector ][ keys[i] ].apsSpent;
+                        this.TCCData[ keys[i] ].path.push( currentSector );
+                        }
+                }
+                
+                // and set the sector visited, and set our current the previous.
+                this.TCCData[ currentSector ].visited = true;
+                previousSector = currentSector;
+            }
             
             
         }
