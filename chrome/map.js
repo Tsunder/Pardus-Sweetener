@@ -633,8 +633,9 @@ SectorMap.prototype = {
                         - universeMap[ this.sector.sector ].y )**2 
                 ) ** (1/2);
             
+            let sectors = Object.keys( universeMap );
             // get the sectors that are close, to save computation time.
-            let sectors = Object.keys( universeMap ).filter( 
+            /*.filter( 
                 function( value, index, arr ) {
                     let dfrom = ( 
                         ( universeMap[ value ].x 
@@ -651,7 +652,7 @@ SectorMap.prototype = {
                             - universeMap[ this.toSector ].y )**2 
                         ) ** (1/2);
                     return ( dfrom < r  || dto < r  )
-                }.bind(this) );
+                }.bind(this) );*/
             
             this.TCCLength = sectors.length;
             for (var i = 0; i< sectors.length; i++) {
@@ -665,10 +666,6 @@ SectorMap.prototype = {
 			this.TCCData[ sector.sector ].visited = false;
 			this.TCCData[ sector.sector ].path = [];
             // this.TCCData[ sector.sector ].jumps = 0;
-            // below takes a lot of time; doing this once for all speeds for all
-            // sectors and storing it saves *a lot* of time.
-            // this.TCCData[ currentSector ].wh = processSector.call( 
-                    // this, this.TCCData[ currentSector ] );
             if ( Object.keys(this.TCCData).length === this.TCCLength )
                 gotData.call(this);
         }
@@ -682,6 +679,7 @@ SectorMap.prototype = {
             5. If the destination node has been marked visited (when planning a route between two specific nodes) or if the smallest tentative distance among the nodes in the unvisited set is infinity (when planning a complete traversal; occurs when there is no connection between the initial node and remaining unvisited nodes), then stop. The algorithm has finished.
             6. Otherwise, select the unvisited node that is marked with the smallest tentative distance, set it as the new "current node", and go back to step 3.
             */
+            
             // console.log(this.TCCData);
             // this.TCCData[ this.sector.sector ] = this.sector;            
   			// this.TCCData[ this.sector.sector ].distance = Infinity;
@@ -730,6 +728,8 @@ SectorMap.prototype = {
                 let keys = Object.keys( this.TCCData[ currentSector ].wh[ previousSector ] );
 
                 for ( let i=0; i<keys.length; i++ ) {
+                console.log(keys[i]);
+                    
                     if ( this.TCCData[ keys[i] ].distance 
                         > this.TCCData[ currentSector ].distance 
                             + this.TCCData[ currentSector ].wh[ previousSector ][ keys[i] ].apsSpent ) {
