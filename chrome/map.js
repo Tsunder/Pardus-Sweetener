@@ -31,8 +31,7 @@ SectorMap.prototype = {
         this.TCCLength = 0;
         this.TCCSectors = {};
         this.TCCPath = [];
-        this.TCCWHcost = 10;
-        this.TCCXHcost = 1000;
+        this.TCCWHcost = { 'wh': 10, 'xh': 1000 };
         this.travelCostCalculator();
 
 		var cols = sector.width, rows = sector.height, tiles = sector.tiles;
@@ -585,7 +584,7 @@ SectorMap.prototype = {
             }
             selectNode.add( opt );
         }
-        selectNode.value = 'Zeaex';
+        selectNode.value = 'Iozeio';//'Zeaex';
         this.distanceDiv.parentNode.appendChild( div );
         // selectNode.addEventListener( 'change', chosenSector );
         // function chosenSector() {
@@ -593,13 +592,13 @@ SectorMap.prototype = {
             let x = document.createElement( 'input' );
             x.type = 'number';
             x.max = 100;
-            x.value = 5;
+            x.value = 10;//5;
             x.setAttribute( 'style', 'width: 3em');
             x.id = 'sweetener-TCC-x';
             let y = document.createElement( 'input' );
             y.type = 'number';
             y.max = 100;
-            y.value = 2;
+            y.value = 10;//2;
             y.setAttribute( 'style', 'width: 3em');
             y.id = 'sweetener-TCC-y';
             div.appendChild( br );
@@ -704,11 +703,7 @@ SectorMap.prototype = {
                             'x': this.TCCData[ this.toSector ].beacons[ nearestNeighborList[i][0] ].x,
                             'y': this.TCCData[ this.toSector ].beacons[ nearestNeighborList[i][0] ].y 
                         }, this.toLoc, this.TCCData[ this.toSector ] )
-                 if ( this.TCCData[ this.toSector ].beacons[ nearestNeighborList[i][0] ].type === 'wh' ) {
-                     path.apsSpent += this.TCCWHcost;
-                 } else if ( this.TCCData[ this.toSector ].beacons[ nearestNeighborList[i][0] ].type === 'xh' ) {
-                     path.apsSpent += this.TCCXHcost;
-                 }
+                path.apsSpent += this.TCCWHcost[ this.TCCData[ this.toSector ].beacons[ nearestNeighborList[i][0] ].type ];
                 this.TCCData[ nearestNeighborList[i][0] ].distance = path.apsSpent;
                 this.TCCData[ nearestNeighborList[i][0] ].path.push( currentSector ); 
                 // this.TCCData[ nearestNeighborList[i][0] ].jumps = 1;                
@@ -753,7 +748,21 @@ SectorMap.prototype = {
                 this.TCCData[ currentSector ].visited = true;
                 previousSector = currentSector;
             }
-        div.textContent = JSON.stringify(this.TCCData[ currentSector ].path);
+        
+        this.TCCData[ currentSector ].path.reverse().pop();
+        let finalSector = this.TCCData[ currentSector ].path[0];
+        console.log(finalSector);
+        var finalPath = this.planPath( {
+            'x': this.TCCData[ this.sector.sector ].beacons[ finalSector ].x , 
+            'y': this.TCCData[ this.sector.sector ].beacons[ finalSector ].y 
+            } , { 'x': this.shipX, 'y': this.shipY }, this.sector );
+        console.log(  finalPath );
+        div.appendChild( document.createElement( 'br' ) );
+        div.appendChild( document.createTextNode (
+            JSON.stringify(this.TCCData[ currentSector ].path )));
+        div.appendChild( document.createElement( 'br' ) );
+        div.appendChild( document.createTextNode ( 'APs: ' + 
+            ( this.TCCData[ currentSector ].distance + finalPath.apsSpent ) ) );
         }
         
         function processSector( sector ) {
@@ -778,18 +787,19 @@ SectorMap.prototype = {
                     if (j===i || beacons[i][0] == beacons[j][0]) // no need for self to self.
                         continue;
                     path[ beacons[i][0] ][ beacons[j][0] ] = this.planPath( 
-                        { 
-                            'x': beacons[j][1].x,
-                            'y': beacons[j][1].y 
-                        }, 
-                        {
+                        { // since we plan backwards, our from WH will be our to WH
                             'x': beacons[i][1].x,
                             'y': beacons[i][1].y 
+                        }, 
+                        {
+                            'x': beacons[j][1].x,
+                            'y': beacons[j][1].y 
+
                         },
                         sector );
+                    path[ beacons[i][0] ][ beacons[j][0] ].apsSpent += this.TCCWHcost[ beacons[j][1].type ];
                 }
             }
-            // console.log(path);
             return path;
         }
 
