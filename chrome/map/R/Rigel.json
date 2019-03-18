@@ -7,6 +7,7 @@
   "beacons": {
     "Baham": { "type": "wh", "x": 26, "y": 1 },
     "Menkar": { "type": "wh", "x": 2, "y": 28 },
-    "Rigel": { "x": 10, "y": 17 }
+    "Rigel": { "x": 10, "y": 17 },
+    "Y-hole": { "type": "xh", "x": 46, "y": 18 }
   }
 }

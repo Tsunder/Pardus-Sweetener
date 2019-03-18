@@ -32,6 +32,7 @@ SectorMap.prototype = {
         this.TCCSectors = {};
         this.TCCPath = [];
         this.TCCWHcost = 10;
+        this.TCCXHcost = 1000;
         this.travelCostCalculator();
 
 		var cols = sector.width, rows = sector.height, tiles = sector.tiles;
@@ -666,8 +667,10 @@ SectorMap.prototype = {
 			this.TCCData[ sector.sector ].visited = false;
 			this.TCCData[ sector.sector ].path = [];
             // this.TCCData[ sector.sector ].jumps = 0;
-            if ( Object.keys(this.TCCData).length === this.TCCLength )
+            if ( Object.keys(this.TCCData).length === this.TCCLength ) {
+                specialTreatment.call(this);
                 gotData.call(this);
+            }
         }
         
         function gotData() {
@@ -692,6 +695,9 @@ SectorMap.prototype = {
                 function( value, index, arr ) {
                     return value[1].type === 'wh' || value[1].type === 'xh'
                 } );
+
+            this.TCCData[ this.toSector ].path = [ this.toSector ];
+   
             for ( var i=0; i<nearestNeighborList.length; i++ ) {
                 let path = this.planPath( 
                         { 
@@ -700,6 +706,8 @@ SectorMap.prototype = {
                         }, this.toLoc, this.TCCData[ this.toSector ] )
                  if ( this.TCCData[ this.toSector ].beacons[ nearestNeighborList[i][0] ].type === 'wh' ) {
                      path.apsSpent += this.TCCWHcost;
+                 } else if ( this.TCCData[ this.toSector ].beacons[ nearestNeighborList[i][0] ].type === 'xh' ) {
+                     path.apsSpent += this.TCCXHcost;
                  }
                 this.TCCData[ nearestNeighborList[i][0] ].distance = path.apsSpent;
                 this.TCCData[ nearestNeighborList[i][0] ].path.push( currentSector ); 
@@ -708,8 +716,8 @@ SectorMap.prototype = {
             this.TCCData[ this.toSector ].visited = true;
             var previousSector = this.toSector;
 
-            // Right, now we have the distance to the WHs, let's do Dijkstra Magic.
-            while( !this.TCCData[ this.sector.sector.visited ] ) {
+            // Right, now we have the distance to the initial WHs, let's do Dijkstra Magic.
+            while( !this.TCCData[ this.sector.sector ].visited ) {
                 // get smallest distance node, so we remove all visited and sort
                 // according to distance, and get number 0.
                 currentSector = Object.entries( this.TCCData ).filter( 
@@ -721,7 +729,7 @@ SectorMap.prototype = {
                 // let nearestNeighborList = Object.keys( this.TCCData[ currentSector ].wh )
                 this.TCCData[ currentSector ].wh = processSector.call( 
                     this, this.TCCData[ currentSector ] );
-
+                
                 previousSector = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 1 ]; 
                 console.log( 'From: ' + previousSector + ' in: ' + currentSector );
                 // now update distances and path.
@@ -736,7 +744,8 @@ SectorMap.prototype = {
                         
                         this.TCCData[ keys[i] ].distance = this.TCCData[ currentSector ].distance 
                             + this.TCCData[ currentSector ].wh[ previousSector ][ keys[i] ].apsSpent;
-                        this.TCCData[ keys[i] ].path.push( currentSector );
+                        this.TCCData[ keys[i] ].path = this.TCCData[ previousSector ].path.concat( previousSector, currentSector ); 
+                        console.log(previousSector, this.TCCData[ previousSector ].path, this.TCCData[ keys[i] ].path);
                         }
                 }
                 
@@ -744,12 +753,13 @@ SectorMap.prototype = {
                 this.TCCData[ currentSector ].visited = true;
                 previousSector = currentSector;
             }
-            
-            
+        div.textContent = JSON.stringify(this.TCCData[ currentSector ].path);
         }
+        
         function processSector( sector ) {
             var path = {};
             // get rid of non wh/xh beacons
+            console.log(sector.sector, sector.beacons);
             let beacons = Object.entries( sector.beacons ).filter( 
                 function( value, index, arr ) {
                     return value[1].type === 'wh' || value[1].type === 'xh'
@@ -783,5 +793,87 @@ SectorMap.prototype = {
             return path;
         }
 
+        function specialTreatment() {
+            // waayan, betelgeuse, miayda, heze, pardus, paan, facece, wasat/kitalpha    
+            // waayan
+            this.TCCData[ 'Waayan (North)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Waayan' ] ));
+            this.TCCData[ 'Waayan (North)' ].distance = Infinity;
+            this.TCCData[ 'Waayan (North)' ].sector = 'Waayan (North)';
+            delete this.TCCData[ 'Waayan (North)' ].beacons[ 'HC 4-962 (South)' ];
+            this.TCCData[ 'Waayan (North)' ].beacons[ 'HC 4-962' ] =
+                this.TCCData[ 'Waayan (North)' ].beacons[ 'HC 4-962 (North)' ];
+            delete this.TCCData[ 'Waayan (North)' ].beacons[ 'HC 4-962 (North)' ];
+            
+            this.TCCData[ 'Waayan (South)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Waayan' ] ));
+            this.TCCData[ 'Waayan (South)' ].distance = Infinity;
+            this.TCCData[ 'Waayan (South)' ].sector = 'Waayan (South)';
+            delete this.TCCData[ 'Waayan (South)' ].beacons[ 'HC 4-962 (North)' ];
+            this.TCCData[ 'Waayan (South)' ].beacons[ 'HC 4-962' ] =
+                this.TCCData[ 'Waayan (South)' ].beacons[ 'HC 4-962 (South)' ];
+            delete this.TCCData[ 'Waayan (South)' ].beacons[ 'HC 4-962 (South)' ];
+            delete this.TCCData[ 'Waayan (South)' ].beacons[ 'JS 2-090' ];
+            
+            delete this.TCCData[ 'Waayan' ];
+            
+            this.TCCData[ 'JS 2-090' ].beacons[ 'Waayan (North)' ] =
+                this.TCCData[ 'JS 2-090' ].beacons[ 'Waayan' ];
+            delete this.TCCData[ 'JS 2-090' ].beacons[ 'Waayan' ];
+            
+            // fixing NEX hubs.
+            var nexList = [ 'Nex Kataam', 'Nex 0001', 'Nex 0002', 'Nex 0003',
+            'Nex 0004', 'Nex 0005', 'Nex 0006' ];
+            nexList.forEach( function( element ) {
+                for (var i=0; i<nexList.length; i++) {
+                    if ( nexList[i] === element )
+                        continue;
+                    
+                    this.TCCData[ element ].beacons[ nexList[i] ] =
+                        this.TCCData[ element ].beacons[ 'X-hole' ];
+                }
+                delete this.TCCData[ element ].beacons[ 'X-hole' ];
+            }.bind(this) );
+            
+            // fixing Y holes
+            var yHoles = [ 'Ras Elased', 'Rigel', 'Cor Caroli' ]
+            yHoles.forEach( function( element ) {
+                for (var i=0; i<nexList.length; i++) {
+                    this.TCCData[ element ].beacons[ nexList[i] ] =
+                        this.TCCData[ element ].beacons[ 'Y-hole' ];
+                }
+                delete this.TCCData[ element ].beacons[ 'Y-hole' ];
+            }.bind(this) );
+            // Betelgeuse
+            this.TCCData[ 'Betelgeuse (West)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Betelgeuse' ] ));
+            this.TCCData[ 'Betelgeuse (West)' ].distance = Infinity;
+            this.TCCData[ 'Betelgeuse (West)' ].sector = 'Betelgeuse (West)'
+
+            delete this.TCCData[ 'Betelgeuse (West)' ].beacons[ 'Sohoa' ];
+            delete this.TCCData[ 'Betelgeuse (West)' ].beacons[ 'Tiacan' ];
+            
+            this.TCCData[ 'Betelgeuse (East)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Betelgeuse' ] ));
+            this.TCCData[ 'Betelgeuse (East)' ].distance = Infinity;
+            this.TCCData[ 'Betelgeuse (East)' ].sector = 'Betelgeuse (East)';
+            delete this.TCCData[ 'Betelgeuse (East)' ].beacons[ 'GV 4-652' ];
+            delete this.TCCData[ 'Betelgeuse (East)' ].beacons[ 'Rashkan' ];
+            
+            delete this.TCCData[ 'Betelgeuse' ];
+            // Miayda
+            // this.TCCData[ 'Miayda (North)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Miayda' ] ));
+            // this.TCCData[ 'Miayda (North)' ].distance = Infinity;
+            // this.TCCData[ 'Miayda (North)' ].sector = 'Miayda (North)';
+            // this.TCCData[ 'Miayda (South)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Miayda' ] ));
+            // this.TCCData[ 'Miayda (South)' ].distance = Infinity;
+            // this.TCCData[ 'Miayda (South)' ].sector = 'Miayda (South)';
+            // delete this.TCCData[ 'Miayda' ];
+            
+            // bewaack
+            // this.TCCData[ 'Bewaack (North)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Bewaack' ] ));
+            // this.TCCData[ 'Bewaack (North)' ].distance = Infinity;
+            // this.TCCData[ 'Bewaack (North)' ].sector = 'Bewaack (North)';
+            // this.TCCData[ 'Bewaack (South)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Bewaack' ] ));
+            // this.TCCData[ 'Bewaack (South)' ].distance = Infinity;
+            // this.TCCData[ 'Bewaack (South)' ].sector = 'Bewaack (South)'; 
+            // delete this.TCCData[ 'Bewaack' ];
+            }
     }
 };

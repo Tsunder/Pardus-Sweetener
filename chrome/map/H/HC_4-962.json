@@ -7,7 +7,7 @@
   "beacons": {
     "Micanex": { "type": "wh", "x": 6, "y": 0 },
     "Pass FED-04": { "type": "wh", "x": 11, "y": 6 },
-    "Waayan": { "type": "wh", "x": 0, "y": 7 },
+    "Waayan (North)": { "type": "wh", "x": 0, "y": 7 },
     "Waayan (South)": { "type": "wh", "x": 0, "y": 11 }
   }
 }
