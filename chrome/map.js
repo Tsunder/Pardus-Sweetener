@@ -858,6 +858,7 @@ SectorMap.prototype = {
             renameWH.call( this, 'Sodaack', 'Facece', 'Facece (North)' );
             renameWH.call( this, 'Lahola', 'Facece', 'Facece (North)' );
             copySector.call( this, 'Facece', 'Facece (South)' );
+            delete this.TCCData[ 'Facece' ];
             // Heze
             copySector.call( this, 'Heze', 'Heze (North)' );
             renameWH.call( this, 'Heze', 'Nari (North)', 'Nari' );
@@ -865,7 +866,8 @@ SectorMap.prototype = {
             delete this.TCCData[ 'Heze (North)' ].beacons[ 'Nunki' ];
             copySector.call( this, 'Heze', 'Heze (South)' );
             delete this.TCCData[ 'Heze (South)' ].beacons[ 'Nari (North)' ];
-            delete this.TCCData[ 'Heze (South)' ].beacons[ 'Procyon' ];            
+            delete this.TCCData[ 'Heze (South)' ].beacons[ 'Procyon' ];
+            delete this.TCCData[ 'Heze' ];
             // Miayda
             // this.TCCData[ 'Miayda (North)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Miayda' ] ));
             // this.TCCData[ 'Miayda (North)' ].distance = Infinity;
