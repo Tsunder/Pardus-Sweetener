@@ -853,7 +853,19 @@ SectorMap.prototype = {
             renameWH.call( this, 'SD 3-562 (East)', 'Ross (East)', 'Ross' );
             delete this.TCCData[ 'SD 3-562 (East)' ].beacons[ 'Pass FED-06' ];
             delete this.TCCData[ 'SD 3-562' ];
-            
+            // Facece
+            copySector.call( this, 'Facece', 'Facece (North)' );
+            renameWH.call( this, 'Sodaack', 'Facece', 'Facece (North)' );
+            renameWH.call( this, 'Lahola', 'Facece', 'Facece (North)' );
+            copySector.call( this, 'Facece', 'Facece (South)' );
+            // Heze
+            copySector.call( this, 'Heze', 'Heze (North)' );
+            renameWH.call( this, 'Heze', 'Nari (North)', 'Nari' );
+            delete this.TCCData[ 'Heze (North)' ].beacons[ 'Nari (South)' ];
+            delete this.TCCData[ 'Heze (North)' ].beacons[ 'Nunki' ];
+            copySector.call( this, 'Heze', 'Heze (South)' );
+            delete this.TCCData[ 'Heze (South)' ].beacons[ 'Nari (North)' ];
+            delete this.TCCData[ 'Heze (South)' ].beacons[ 'Procyon' ];            
             // Miayda
             // this.TCCData[ 'Miayda (North)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Miayda' ] ));
             // this.TCCData[ 'Miayda (North)' ].distance = Infinity;
