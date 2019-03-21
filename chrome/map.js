@@ -716,37 +716,37 @@ SectorMap.prototype = {
                 // get smallest distance node, so we remove all visited and sort
                 // according to distance, and get number 0.
                 currentSector = Object.entries( this.TCCData ).filter( 
-                function( value ) {
-                    return !value[1].visited;
-                } ).sort( function( a, b ) {
-                    return a[1].distance - b[1].distance;
-                })[0][0];
-                // let nearestNeighborList = Object.keys( this.TCCData[ currentSector ].wh )
+                    function( value ) {
+                        return !value[1].visited;
+                    } ).sort( function( a, b ) {
+                        return a[1].distance - b[1].distance;
+                    })[0][0];
+                
                 this.TCCData[ currentSector ].wh = processSector.call( 
                     this, this.TCCData[ currentSector ] );
-                
+
                 previousSector = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 1 ]; 
-                console.log( 'From: ' + previousSector + ' in: ' + currentSector );
+                //console.log( 'From: ' + previousSector + ' in: ' + currentSector );
                 // now update distances and path.
                 let keys = Object.keys( this.TCCData[ currentSector ].wh[ previousSector ] );
 
                 for ( let i=0; i<keys.length; i++ ) {
-                console.log(keys[i]);
-                    
-                    if ( this.TCCData[ keys[i] ].distance 
+                    let skey = keys[i].replace(/ \(North\)| \(South\)| \(East\)| \(West\)/g,'');
+                    if ( this.TCCData[ skey ].distance 
                         > this.TCCData[ currentSector ].distance 
                             + this.TCCData[ currentSector ].wh[ previousSector ][ keys[i] ].apsSpent ) {
                         
-                        this.TCCData[ keys[i] ].distance = this.TCCData[ currentSector ].distance 
+                        this.TCCData[ skey ].distance = this.TCCData[ currentSector ].distance 
                             + this.TCCData[ currentSector ].wh[ previousSector ][ keys[i] ].apsSpent;
-                        this.TCCData[ keys[i] ].path = this.TCCData[ previousSector ].path.concat( previousSector, currentSector ); 
-                        console.log(previousSector, this.TCCData[ previousSector ].path, this.TCCData[ keys[i] ].path);
+                        this.TCCData[ skey ].path = this.TCCData[ previousSector ].path.concat( previousSector, keys[i] ); 
+                  //      console.log(this.TCCData[ skey ].path);
                         }
                 }
                 
                 // and set the sector visited, and set our current the previous.
                 this.TCCData[ currentSector ].visited = true;
-                previousSector = currentSector;
+                console.log(currentSector + ':'+JSON.stringify(this.TCCData[ currentSector].wh));
+                previousSector = this.TCCData[ currentSector ].wh [ currentSector ];
             }
         
         this.TCCData[ currentSector ].path.reverse().pop();
@@ -768,7 +768,7 @@ SectorMap.prototype = {
         function processSector( sector ) {
             var path = {};
             // get rid of non wh/xh beacons
-            console.log(sector.sector, sector.beacons);
+            // console.log(sector.sector, sector.beacons);
             let beacons = Object.entries( sector.beacons ).filter( 
                 function( value, index, arr ) {
                     return value[1].type === 'wh' || value[1].type === 'xh'
@@ -800,6 +800,23 @@ SectorMap.prototype = {
                     path[ beacons[i][0] ][ beacons[j][0] ].apsSpent += this.TCCWHcost[ beacons[j][1].type ];
                 }
             }
+            
+            // var sectorNZ = [ [ 'Bewaack','Miayda' ], [ 'Miayda', 'Bewaack' ] ];
+            // for (var i = 0; i<sectorNZ.length; i++) {
+                // if ( sector.sector === sectorNZ[i][0] ) {
+                    // console.log(path);
+                    // let whs = Object.keys(path.length)
+                    // for ( var j=0; j< whs.length; j++
+                    // if ( path[ whs[j] ][ sectorNZ[i][1] + ' (North)' ].apsSpent <
+                        // path[ whs[j] ][ sectorNZ[i][1] + ' (South)' ].apsSpent ) {
+                            // path[ whs[j] ][ sectorNZ[i][1] ]  = path[ whs[j] ][ sectorNZ[i][1] + ' (North)' ];
+                        // } else {
+                            // path[ whs[j] ][ sectorNZ[i][1]] = path[ whs[j] ][ sectorNZ[i][1] + ' (South)' ];
+                        // }
+                        // delete path[ whs[j] ][ sectorNZ[i][1] + ' (South)' ];
+                        // delete path[ whs[j] ][ sectorNZ[i][1] + ' (North)' ];
+                // }
+            // }
             return path;
         }
 
@@ -868,6 +885,14 @@ SectorMap.prototype = {
             delete this.TCCData[ 'Heze (South)' ].beacons[ 'Nari (North)' ];
             delete this.TCCData[ 'Heze (South)' ].beacons[ 'Procyon' ];
             delete this.TCCData[ 'Heze' ];
+            // Pardus
+            // copySector.call( this, 'Pardus', 'Pardus (West)' );
+            // copySector.call( this, 'Pardus', 'Pardus (Center)' );
+            // copySector.call( this, 'Pardus', 'Pardus (East)' );
+            // delete this.TCCData[ 'Pardus' ];          
+            // Paan. Fuck Paan. Who goes there anyway.
+            delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner West)' ];
+            delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner East)' ];
             // Miayda
             // this.TCCData[ 'Miayda (North)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Miayda' ] ));
             // this.TCCData[ 'Miayda (North)' ].distance = Infinity;
