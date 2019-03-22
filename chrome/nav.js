@@ -1178,16 +1178,21 @@ function highlightVisited( data ) {
     
     var a = navtable.getElementsByTagName( 'a' );
     var div = doc.createElement( 'div' );
+    //todo: add a special case soemtime for user's location which may not always have an onclick()
+    //iterates over all onclick tiles and checks if the tile is in the recently visited list.
+    //adds colouring as appropriate
     for ( var i=0; i< a.length; i++ ) {
         if (!a[i].getAttribute('onclick'))
             continue;
         let loc = a[i].getAttribute('onclick').split(/\(|\)/g)[1];
         if ( locs.includes( loc ) ) {
         	let decayProportion = Math.round(10 * (Date.now() - data[ ukey + 'visit' ][ loc ]) / decayTime) / 10 ;
+        	if (decayProportion >= 1) {
+        		locs.splice( locs.indexOf( loc, 1 ) )
+        		continue;
+    		}
             let red = 0;
             let green = 255;
-            let fade = Math.round((255 / decayTime) * ( Date.now() 
-                - data[ ukey + 'visit' ][ loc ] ) );
             let opacity = Math.max( 0.5, 0.9 - decayProportion ); // don't go too transparent
             let fade = Math.min( 220, Math.round( 255 * decayProportion )); // don't go full colour
             red += fade;
