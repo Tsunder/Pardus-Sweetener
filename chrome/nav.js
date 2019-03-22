@@ -1195,7 +1195,6 @@ function highlightVisited( data ) {
 		return;    
     
     var a = navtable.getElementsByTagName( 'a' );
-    var div = doc.createElement( 'div' );
     //todo: add a special case soemtime for user's location which may not always have an onclick()
     //iterates over all onclick tiles and checks if the tile is in the recently visited list.
     //adds colouring as appropriate
