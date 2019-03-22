@@ -1165,8 +1165,9 @@ function highlightVisited( data ) {
         var decayTime = 1000*config.displayVisitedDecay;
     }
     
-    //clear out old tiles, maybe faster than below, but requires more refactoring.
-    /*data[ ukey + 'visit' ].push([ [ userloc ],Date.now() ]);
+    //maybe have the visited tiles be sorted by age rather than an object
+    //makes for faster removing of old tiles, better performance
+    /*(data[ ukey + 'visit' ].push([ [ userloc ],Date.now() ]);
     for (var i = 0; i < data[ ukey + 'visit' ].length; i++) {
         if (Date.now() - data[ ukey + 'visit' ][i][1] >= decayTime) {
             data[ ukey + 'visit'].splice(0, i);
@@ -1179,7 +1180,7 @@ function highlightVisited( data ) {
 
     //clear out old tiles. kind of slow due to iterating over every tile every time
     for (var location in data[ ukey + 'visit' ]) {
-        if (date.now() - time >= decayTime) {
+        if (Date.now() - data[ ukey + 'visit' ][location] >= decayTime) {
            delete data[ ukey + 'visit'][location];
         }
     }
