@@ -1188,7 +1188,9 @@ function highlightVisited( data ) {
         if ( locs.includes( loc ) ) {
         	let decayProportion = Math.round(10 * (Date.now() - data[ ukey + 'visit' ][ loc ]) / decayTime) / 10 ;
         	if (decayProportion >= 1) {
-        		locs.splice( locs.indexOf( loc, 1 ) )
+        		//removes too old tiles when visited. not the most efficient
+        		//should iterate over all visited tiles instead.
+        		data[ ukey + 'visit' ].splice( data[ ukey + 'visit' ].indexOf( loc, 1 ) )
         		continue;
     		}
             let red = 0;
@@ -1208,6 +1210,9 @@ function highlightVisited( data ) {
             }
         }
     }
+   	if (data[ ukey + 'visit'].length < locs.length) {
+   		chrome.storage.local.set( data );
+   	}
 }
 
 // mission display
