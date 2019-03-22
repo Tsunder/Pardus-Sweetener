@@ -1164,8 +1164,25 @@ function highlightVisited( data ) {
     } else {
         var decayTime = 1000*config.displayVisitedDecay;
     }
+    
+    //clear out old tiles, maybe faster than below, but requires more refactoring.
+    /*data[ ukey + 'visit' ].push([ [ userloc ],Date.now() ]);
+    for (var i = 0; i < data[ ukey + 'visit' ].length; i++) {
+        if (Date.now() - data[ ukey + 'visit' ][i][1] >= decayTime) {
+            data[ ukey + 'visit'].splice(0, i);
+            break;
+        }
+    }*/
+
     // directly save that we are on this tile;
     data[ ukey + 'visit' ][ userloc ] = Date.now();
+
+    //clear out old tiles. kind of slow due to iterating over every tile every time
+    for (var location in data[ ukey + 'visit' ]) {
+        if (date.now() - time >= decayTime) {
+           delete data[ ukey + 'visit'][location];
+        }
+    }
     chrome.storage.local.set( data );
 
     // highlight the tiles according to the time visited
@@ -1188,10 +1205,6 @@ function highlightVisited( data ) {
         if ( locs.includes( loc ) ) {
         	let decayProportion = Math.round(10 * (Date.now() - data[ ukey + 'visit' ][ loc ]) / decayTime) / 10 ;
         	if (decayProportion >= 1) {
-        		//removes too old tiles when visited. not the most efficient
-        		//should iterate over all visited tiles instead.
-        		data[ ukey + 'visit' ].splice( data[ ukey + 'visit' ].indexOf( loc, 1 ) )
-        		continue;
     		}
             let red = 0;
             let green = 255;
@@ -1210,9 +1223,6 @@ function highlightVisited( data ) {
             }
         }
     }
-   	if (data[ ukey + 'visit'].length < locs.length) {
-   		chrome.storage.local.set( data );
-   	}
 }
 
 // mission display
