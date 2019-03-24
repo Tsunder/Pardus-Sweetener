@@ -8,7 +8,7 @@
  </head>
  <body>
   <section>
-   <h3>General settings</h3>
+   <h3>General</h3>
 
    <div>
     <p>
@@ -70,16 +70,11 @@
       Show the recipient's alliance name when composing a private message
      </label>
     </p>
-    <p>
-     <input type="checkbox" id="missionDisplay">
-     <label for="missionDisplay">
-      Store and display missions on nav screen.
-     </label>
-    </p>   </div>
+  </div>
   </section>
 
   <section>
-   <h3>Nav & Minimap settings</h3>
+   <h3>Navigation and Minimap</h3>
    <div>
 
     <p>
@@ -92,8 +87,22 @@
      <label for="navigationCoordinates">
       Add a coordinates grid to nav area.
      </label>
+     <br/>
+     <input type="checkbox" id="displayVisited">
+     <label for="displayVisited">
+      Enable highlighting of the recently visited tiles. 
+     </label>
+     <label for="displayVisited">
+      Decay time (seconds) (Default: 3 minutes): 
+     </label>
+     <input type="number" id="displayVisitedDecay" disabled>
     </p>
-
+    <p>
+     <input type="checkbox" id="missionDisplay">
+     <label for="missionDisplay">
+      Store and display missions on nav screen.
+     </label>
+    </p> 
      <input type="checkbox" id="miniMap">
      <label for="miniMap">
       Show a small map of the current sector
@@ -118,7 +127,7 @@
   </section>
 
   <section>
-   <h3>Alarm and notifications</h3>
+   <h3>Alarms and Notifications</h3>
 
    <div>
     <p>
@@ -225,8 +234,7 @@
   </section>
 
   <section>
-   <h3>Combat settings</h3>
-
+   <h3>Combat</h3>
    <div>
     <p>
      <input type="checkbox" id="pvpMissileAutoAll">
@@ -537,8 +545,7 @@
   </section>
 
   <section>
-   <h3>Ambush settings</h3>
-
+   <h3>Ambush</h3>
    <div>
     <p>
      <div>
@@ -615,7 +622,7 @@
   </section>
 
   <section>
-   <h3>Online list highlighting</h3>
+   <h3>Online List Highlighting</h3>
 
    <div>
     <p>

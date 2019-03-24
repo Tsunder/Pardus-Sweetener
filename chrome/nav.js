@@ -1,4 +1,4 @@
-// The nav driver.
+ // The nav driver.
 // Require shiplinks.js
 
 'use strict';
@@ -117,6 +117,8 @@ function start() {
 	cs.addKey( 'miniMapNavigation' );
 	cs.addKey( 'clockStim' );
 	cs.addKey( 'missionDisplay' );
+	cs.addKey( 'displayVisited' );
+    cs.addKey( 'displayVisitedDecay' );
     
     let ukey = Universe.getServer( document ).substr( 0, 1 );
     cs.addKey( ukey + 'storedPath' );
@@ -146,6 +148,7 @@ function applyConfiguration() {
 		updateNavigationGrid();
 
 		let ukey = Universe.getServer( doc ).substr( 0, 1 );
+
 		if ( config.displayNavigationEnabled ) {
 			let name = ukey + 'storedPath';
 			chrome.storage.local.get( name , updateRoutePlanner );
@@ -153,13 +156,18 @@ function applyConfiguration() {
 		if ( config.missionDisplay ) {
 			chrome.storage.local.get( [ ukey + 'mlist' ], showMissions );
 		}
+        if ( config.displayVisited ) {
+            chrome.storage.local.get( [ ukey + 'visit' ], highlightVisited );
+        } else {
+            chrome.storage.local.remove( [ ukey + 'visit' ] );
+        }
 	}
 	else {
 		// Instead, we only want to do this the first time we run,
 		// because we only want to do it once.  We didn't do it in
 		// start() because we didn't want to receive messages from the
 		// game until we were properly configured.  But now we are.
-		
+
 		navTilesXEval = doc.createExpression( 'tbody/tr/td', null );
 		highlightedTiles = [];
 
@@ -170,7 +178,6 @@ function applyConfiguration() {
 		doc.defaultView.addEventListener( 'message', onGameMessage );
 		var script = doc.createElement( 'script' );
 		script.type = 'text/javascript';
-		//script.textContent = "(function() {var fn=function(){window.postMessage({pardus_sweetener:1,loc:typeof(userloc)=='undefined'?null:userloc,ajax:typeof(ajax)=='undefined'?null:ajax},window.location.origin);};if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
 		script.textContent = "(function() {var fn=function(){window.postMessage({pardus_sweetener:1,loc:typeof(userloc)=='undefined'?null:userloc,ajax:typeof(ajax)=='undefined'?null:ajax,navSizeVer:typeof(navSizeVer)=='undefined'?null:navSizeVer,navSizeHor:typeof(navSizeHor)=='undefined'?null:navSizeHor,fieldsTotal:typeof(fieldsTotal)=='undefined'?null:fieldsTotal,tileRes:typeof(tileRes)=='undefined'?null:tileRes},window.location.origin);};if(typeof(addUserFunction)=='function')addUserFunction(fn);fn();})();";
 		doc.body.appendChild( script );
 
@@ -221,8 +228,12 @@ function onGameMessage( event ) {
 	if ( config.missionDisplay ) {
 		chrome.storage.local.get( [ ukey + 'mlist' ], showMissions );
 	}
-
-	configured = true;
+    if ( config.displayVisited ) {
+        chrome.storage.local.get( [ ukey + 'visit' ], highlightVisited );
+    } else {
+        chrome.storage.local.remove( [ ukey + 'visit' ] );
+    }
+    configured = true;
 }
 
 // This does a bit more work than may be needed. It's called when a
@@ -1141,6 +1152,78 @@ function updateRoutePlanner( data ) {
 	}
 }
 
+function highlightVisited( data ) {
+	let ukey = Universe.getServer ( doc ).substr( 0, 1 );
+
+    // initial setup
+    if ( !data[ ukey + 'visit' ] ) {
+        data[ ukey + 'visit' ] = {};
+    }
+    if( !config.displayVisitedDecay ) {
+        decayTime = 180000; //3 minutes
+    } else {
+        var decayTime = 1000*config.displayVisitedDecay;
+    }
+    
+    //maybe have the visited tiles be sorted by age rather than an object
+    //makes for faster removing of old tiles, better performance
+    /*(data[ ukey + 'visit' ].push([ [ userloc ],Date.now() ]);
+    for (var i = 0; i < data[ ukey + 'visit' ].length; i++) {
+        if (Date.now() - data[ ukey + 'visit' ][i][1] >= decayTime) {
+            data[ ukey + 'visit'].splice(0, i);
+            break;
+        }
+    }*/
+
+    // directly save that we are on this tile;
+    data[ ukey + 'visit' ][ userloc ] = Date.now();
+
+    //clear out old tiles. kind of slow due to iterating over every tile every time
+    for (var location in data[ ukey + 'visit' ]) {
+        if (Date.now() - data[ ukey + 'visit' ][location] >= decayTime) {
+           delete data[ ukey + 'visit'][location];
+        }
+    }
+    chrome.storage.local.set( data );
+
+    // highlight the tiles according to the time visited
+    var locs = Object.keys( data[ ukey + 'visit' ] );
+    var navtable = doc.getElementById( 'navareatransition' );
+	if ( !navtable )
+		navtable = doc.getElementById( 'navarea' );
+	if ( !navtable )
+		return;    
+    
+    var a = navtable.getElementsByTagName( 'a' );
+    //todo: add a special case soemtime for user's location which may not always have an onclick()
+    //iterates over all onclick tiles and checks if the tile is in the recently visited list.
+    //adds colouring as appropriate
+    for ( var i=0; i< a.length; i++ ) {
+        if (!a[i].getAttribute('onclick'))
+            continue;
+        let loc = a[i].getAttribute('onclick').split(/\(|\)/g)[1];
+        if ( locs.includes( loc ) ) {
+        	let decayProportion = Math.round(10 * (Date.now() - data[ ukey + 'visit' ][ loc ]) / decayTime) / 10 ;
+            let red = 0;
+            let green = 255;
+            let opacity = Math.max( 0.5, 1.1 - decayProportion ); // don't go too transparent
+            let fade = Math.min( 220, Math.round( 255 * decayProportion )); // don't go full colour
+            red += fade;
+            green -= fade;
+
+            setClass( a[i].parentNode );
+            setClass( a[i].firstChild );
+            
+            function setClass( node ) {
+                let cl = node.getAttribute( 'class' );
+                node.setAttribute( 'class', cl + ' sweetener-visited' );
+                    node.style.backgroundColor = 'rgba( '+red+', '+green+', 0, ' +opacity+ ' )'; 
+            }
+        }
+    }
+}
+
+// mission display
 function showMissions( data ) {
 	let ukey = Universe.getServer ( doc ).substr( 0, 1 );
 
