@@ -6,6 +6,6 @@
   "tiles": "bbbbbbbeeebbbbbbbbbbbbbbbeeebbbbbbbbbbbbbbbbebbbeeeebbbeeeeeeeeeeeeffeebeeeeeeeeeeffffffeeeefebbbbbeeeeeeffeeefeeeeebbeebbefeebeeeeeeeebbbbeefebbbeebbeeeebbbeefebbbbbbbbeeeebbbeeebbbbbbbbbefebbbeebbbbbeeeeeeeebbbeebbbbbefeeeeebbbbeebbbeefeebbbbbbbbeeebbefeebbbbbbbbbeeebbefebbeeeeebbbbeebeeeebeefffeeebeeebeeebbeffffffeeefebbeebeeffffeeeffeebbeeeeeeeeeebeeeebbbeffeebbbebbbbbbbbbeeeebbbeeebbbbbbbbeebbbbbeeebbbbbbb",
   "beacons": {
     "YC 3-268": { "type": "wh", "x": 8, "y": 0 },
-    "SD 3-562": { "type": "wh", "x": 9, "y": 22 }
+    "SD 3-562 (West)": { "type": "wh", "x": 9, "y": 22 }
   }
 }

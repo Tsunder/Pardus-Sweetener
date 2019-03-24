@@ -402,127 +402,237 @@ SectorMap.prototype = {
         return speed;
     },
         
-    // In planPath, we do a BFS across the entire sector with respect to the 
-    // cost, stopping when either the state is the same for 100 AP's 
-    // (unreachable) or we've reached the location.
-    // loc and fromLoc are both a dictionary with x and y as keys, sector is the 
-    // sector (see /map/ and onwards for examples).
-    planPath: function( loc, fromLoc, sector ) {
-        // first get the travel costs per tile type: tc
-        let speed = this.getSpeed();
-        var tc = { 
-			b: -1,
-			'f': this.VISC[ 'f' ] - speed, // fuel -> space
-			'g': this.VISC[ 'g' ] - speed, // nebula gas
-			'v': this.VISC[ 'v' ] - speed,
-			'e': this.VISC[ 'e' ] - speed,
-			'o': this.VISC[ 'o' ] - speed, // ore -> asteriods
-			'm': this.VISC[ 'm' ] - speed  // Exotic Matter
-		};
         
-        var i,j;
-        var bfsState = [];
-        var costFromTile = []; //quickly lookup the cost of travelling from any tile, without string fluffery
-        
-        for  ( i=0; i<sector.height; i++ ) {
-            bfsState.push([]);
-            costFromTile.push([]);
-            for ( j=0 ; j<sector.width; j++) {
-                bfsState[i].push([-1, -1, -1]); //[previous X, previous Y, distance]
-                costFromTile[i].push(~~tc[sector.tiles.charAt(i * sector.width + j)]);
+       
+    planPath: function calcPath( end, start, sector ) {
+		var map = [];
+        var speed = this.getSpeed();
+		// parsing from Sweetener to VMAP
+		sector.t = sector.tiles;
+		sector.w = sector.width;
+		sector.h = sector.height;
+
+		for ( var i = 0; i < sector.h; i++ ) {
+			for ( var j = 0; j < sector.w; j++ ) {
+				map[ i * sector.w + j ] = {
+					'n': i * sector.w + j,
+					'x': j,
+					'y': i,
+					't': sector.t[ i * sector.w + j ],
+					'distance': Infinity,
+					'visited': false,
+					'path': -1,
+					'steps': Infinity
+				};
+			}
+		}
+		var endN = end.y * sector.w + end.x, 
+			startN = start.y * sector.w + start.x;
+		
+		if (map[startN].t === 'b' || map[endN] === 'b')
+			return;
+
+		map[ endN ].distance = 0;
+		map[ endN ].steps = 0;
+		var newList = [], curList = [], nnList = [];
+		curList[0] = endN;
+		
+		while ( !map[ startN ].visited ) {
+			var newList = [];
+			for ( var i = 0; i < curList.length ; i++ ) {
+				nnList = nearestNeighbours( sector.w, curList[i] );
+				updateDistance( nnList, curList[i], speed, map, this.VISC );
+				newList = newList.concat( nnList );
+
+				//removing duplicates - greatly speeds up calculation
+				newList.sort(); 
+				for ( var l = 0; l < newList.length - 1; l++ ) { 
+					if ( newList[l] === newList[ l + 1 ] ) {
+						newList.splice( l, 1 );
+					}
+				}
+			}
+			// shortest distances go first next round
+			newList
+                .filter( 
+                function( value ) {
+                    return !map[value].visited;
+                } )
+                .sort( function compare(a ,b) {
+                return map[ a ].distance - map[ b ].distance;
+				});
+            if (newList.length === 0) {
+                // no new list? We're at the end of the line. Unreachable!
+                break;
             }
-        }
-        bfsState[fromLoc.y][fromLoc.x] = [0, fromLoc.y, fromLoc.x]; //mark current location as zero distance
+			curList = newList;
+		}
+		
+		var outputList = [];
+		var tileID = startN;
+
+		for ( var i = 0; i < map[ startN ].steps + 1 ; i++ ) {
+			outputList[ i ] = { 'x': map[ tileID ].x , 'y': map[ tileID ].y };
+			tileID = map[ tileID ].path;
+		}
+		return { path: outputList, apsSpent: map[ endN ].distance };
+		
+		function nearestNeighbours( sectorw, n ) {
+			var m, nnList = [];
+			for ( var i = 0; i < 9; i++ ) {
+				m = n + ( Math.floor( i / 3 ) - 1 ) * sectorw - 1 + i % 3;
+				if ( m >= 0 && m < map.length && m != n && map[ m ].t !== 'b' && !map[ m ].visited 
+					&& Math.abs( map[ n ].y - map[ m ].y ) < 3 && Math.abs( map[ n ].x - map[ m ].x ) < 3) {
+					// Add to the list if not out of bounds, not equal to start spot, not boundary, not visited already 
+					// and not going *through the wall* of the map, that's cheatin!
+					nnList.push( m );
+				}
+			}
+			return nnList;
+		}
+
+		function updateDistance( nnList, n, speed, map, VISC ) {
+		
+			for ( var i = 0; i < nnList.length ; i++ ) {
+
+				if ( map[ nnList[i] ].distance > VISC[ map[ n ].t ] - speed + map[ n ].distance ) {
+					map[ nnList[i] ].distance = VISC[ map[ n ].t ] - speed + map[ n ].distance;
+					map[ nnList[i] ].path  = n;			
+					if ( !(map[ nnList[i] ].steps == map[ n ].steps + 1 ) ) { 
+						//normal movement, not a better tile to go through
+						map[ nnList[i] ].steps = map[ n ].steps + 1;
+					}
+				}
+			}
+			map[ n ].visited = true;
+			return map;
+		}
+	},
+
+    
+    
+    // // In planPath, we do a BFS across the entire sector with respect to the 
+    // // cost, stopping when either the state is the same for 100 AP's 
+    // // (unreachable) or we've reached the location.
+    // // loc and fromLoc are both a dictionary with x and y as keys, sector is the 
+    // // sector (see /map/ and onwards for examples).
+
+    // planPath: function( loc, fromLoc, sector ) {
+        // // first get the travel costs per tile type: tc
+        // let speed = this.getSpeed();
+        // var tc = { 
+			// b: -1,
+			// 'f': this.VISC[ 'f' ] - speed, // fuel -> space
+			// 'g': this.VISC[ 'g' ] - speed, // nebula gas
+			// 'v': this.VISC[ 'v' ] - speed,
+			// 'e': this.VISC[ 'e' ] - speed,
+			// 'o': this.VISC[ 'o' ] - speed, // ore -> asteriods
+			// 'm': this.VISC[ 'm' ] - speed  // Exotic Matter
+		// };
         
-        var apsSpent = 0;
-        //if current tile is unreachable, then lol
-        if (costFromTile[loc.y][loc.x] == -1) {
-            apsSpent = "&infin;";
-            return { 'path': [[loc.x, loc.y]], 'apsSpent': apsSpent };           
-        }
+        // var i,j;
+        // var bfsState = [];
+        // var costFromTile = []; //quickly lookup the cost of travelling from any tile, without string fluffery
+        
+        // for  ( i=0; i<sector.height; i++ ) {
+            // bfsState.push([]);
+            // costFromTile.push([]);
+            // for ( j=0 ; j<sector.width; j++) {
+                // bfsState[i].push([-1, -1, -1]); //[previous X, previous Y, distance]
+                // costFromTile[i].push(~~tc[sector.tiles.charAt(i * sector.width + j)]);
+            // }
+        // }
+        // bfsState[fromLoc.y][fromLoc.x] = [0, fromLoc.y, fromLoc.x]; //mark current location as zero distance
+        
+        // var apsSpent = 0;
+        // //if current tile is unreachable, then lol
+        // if (costFromTile[loc.y][loc.x] == -1) {
+            // apsSpent = "&infin;";
+            // return { 'path': [[loc.x, loc.y]], 'apsSpent': apsSpent };           
+        // }
             
-        var unreachableCounter = 0; //reset on map state change, incremented on 1AP spent, marked unreachable when it reaches 100
-        while (unreachableCounter < 100) {
-            //copy bfsState
-            var nextBfsState = [];
-            for (i=0;i<sector.height;i++) {
-                nextBfsState.push([]);
-                for (j=0;j<sector.width;j++) nextBfsState[i].push(bfsState[i][j].slice());
-            }
+        // var unreachableCounter = 0; //reset on map state change, incremented on 1AP spent, marked unreachable when it reaches 100
+        // while (unreachableCounter < 100) {
+            // //copy bfsState
+            // var nextBfsState = [];
+            // for (i=0;i<sector.height;i++) {
+                // nextBfsState.push([]);
+                // for (j=0;j<sector.width;j++) nextBfsState[i].push(bfsState[i][j].slice());
+            // }
             
-            for (i=0;i<sector.height;i++) { 
-                for (j=0;j<sector.width;j++) {
-                    if (bfsState[i][j][0] == -1) 
-                        continue; //not visited yet
+            // for (i=0;i<sector.height;i++) { 
+                // for (j=0;j<sector.width;j++) {
+                    // if (bfsState[i][j][0] == -1) 
+                        // continue; //not visited yet
                     
-                    var processPath = function (curX, curY, nextX, nextY, isDiagonal) { //isDiagonal is used to favor non-diagonal movement when costs are equal, because humans click those easier
-                        if (nextX < 0 || nextX >= sector.height || nextY < 0 || nextY >= sector.width) return;
+                    // var processPath = function (curX, curY, nextX, nextY, isDiagonal) { //isDiagonal is used to favor non-diagonal movement when costs are equal, because humans click those easier
+                        // if (nextX < 0 || nextX >= sector.height || nextY < 0 || nextY >= sector.width) return;
                         
-                        var cost = bfsState[curX][curY][0] + costFromTile[curX][curY];
-                        if (costFromTile[nextX][nextY] == -1) return; //the way is blocked, cannot go
-                        if (cost > apsSpent) return; //too much cost currently
+                        // var cost = bfsState[curX][curY][0] + costFromTile[curX][curY];
+                        // if (costFromTile[nextX][nextY] == -1) return; //the way is blocked, cannot go
+                        // if (cost > apsSpent) return; //too much cost currently
                         
-                        if (nextBfsState[nextX][nextY][0] == -1 || nextBfsState[nextX][nextY][0] > cost || (nextBfsState[nextX][nextY][0] == cost && !isDiagonal)) {
-                            nextBfsState[nextX][nextY] = [cost, curX, curY];
-                            if (nextBfsState[nextX][nextY].join(",") != bfsState[nextX][nextY].join(","))
-                                unreachableCounter = 0;
-                        }
-                    }.bind(this);
+                        // if (nextBfsState[nextX][nextY][0] == -1 || nextBfsState[nextX][nextY][0] > cost || (nextBfsState[nextX][nextY][0] == cost && !isDiagonal)) {
+                            // nextBfsState[nextX][nextY] = [cost, curX, curY];
+                            // if (nextBfsState[nextX][nextY].join(",") != bfsState[nextX][nextY].join(","))
+                                // unreachableCounter = 0;
+                        // }
+                    // }.bind(this);
                     
-                    for (var m=-1; m<2;m++) {
-                        for (var n=-1; n<2;n++) {
-                            if ( m===0 && n===0 )
-                                continue; // skip 0,0
-                            processPath(i, j, i+m, j+n, Math.abs(m)===Math.abs(n) );
-                        }
-                    }
-                }
-            }
+                    // for (var m=-1; m<2;m++) {
+                        // for (var n=-1; n<2;n++) {
+                            // if ( m===0 && n===0 )
+                                // continue; // skip 0,0
+                            // processPath(i, j, i+m, j+n, Math.abs(m)===Math.abs(n) );
+                        // }
+                    // }
+                // }
+            // }
             
-            bfsState = nextBfsState;
+            // bfsState = nextBfsState;
             
-            /* //uncomment to debug
-            var d = "";
-            for (i=0;i<this.sector.height;i++) {
-                for (j=0;j<this.sector.width;j++) {
-                    d += bfsState[i][j][0] + "\t";
-                }
-                d += "\n"
-            }
-            console.log(d);
-            //*/
+            // /* //uncomment to debug
+            // var d = "";
+            // for (i=0;i<this.sector.height;i++) {
+                // for (j=0;j<this.sector.width;j++) {
+                    // d += bfsState[i][j][0] + "\t";
+                // }
+                // d += "\n"
+            // }
+            // console.log(d);
+            // //*/
             
-            //break if we've found a path
-            if (bfsState[loc.y][loc.x][0] != -1) break;
+            // //break if we've found a path
+            // if (bfsState[loc.y][loc.x][0] != -1) break;
             
-            unreachableCounter++;
-            apsSpent++;
+            // unreachableCounter++;
+            // apsSpent++;
             
-            if (apsSpent >= 10000) break; //sanity check
-        }
+            // if (apsSpent >= 10000) break; //sanity check
+        // }
     
         
-        var endState = bfsState[loc.y][loc.x];
-        if (endState[0] == -1) {
-            apsSpent = "&infin;";
-            return { 'path': [[loc.x, loc.y]], 'apsSpent': apsSpent };
-        } else {
-            //if we have found a path, we know it's min length because all the previous iterations did not end here.
-            //now we iterate backwards until we get to the ship
-            i = loc.y;
-            j = loc.x;
-            var path = [];
-            var sanityCheck = 0;
-            while (!(i == fromLoc.y && j == fromLoc.x) && sanityCheck++ < 10000) {
-                path.push([j, i]);
-                var state = bfsState[i][j];
-                i = state[1];
-                j = state[2];
-            }
-            path.push([fromLoc.x, fromLoc.y]);
-            return { 'path': path, 'apsSpent': apsSpent };
-        }
-    },
+        // var endState = bfsState[loc.y][loc.x];
+        // if (endState[0] == -1) {
+            // apsSpent = "&infin;";
+            // return { 'path': [[loc.x, loc.y]], 'apsSpent': apsSpent };
+        // } else {
+            // //if we have found a path, we know it's min length because all the previous iterations did not end here.
+            // //now we iterate backwards until we get to the ship
+            // i = loc.y;
+            // j = loc.x;
+            // var path = [];
+            // var sanityCheck = 0;
+            // while (!(i == fromLoc.y && j == fromLoc.x) && sanityCheck++ < 10000) {
+                // path.push([j, i]);
+                // var state = bfsState[i][j];
+                // i = state[1];
+                // j = state[2];
+            // }
+            // path.push([fromLoc.x, fromLoc.y]);
+            // return { 'path': path, 'apsSpent': apsSpent };
+        // }
+    // },
         
 	// Compute the tile size and whether we'll draw grid lines.
 	//
@@ -695,7 +805,7 @@ SectorMap.prototype = {
                     return value[1].type === 'wh' || value[1].type === 'xh'
                 } );
 
-            this.TCCData[ this.toSector ].path = [ this.toSector ];
+            //this.TCCData[ this.toSector ].path = [ this.toSector ];
    
             for ( var i=0; i<nearestNeighborList.length; i++ ) {
                 let path = this.planPath( 
@@ -706,10 +816,11 @@ SectorMap.prototype = {
                 path.apsSpent += this.TCCWHcost[ this.TCCData[ this.toSector ].beacons[ nearestNeighborList[i][0] ].type ];
                 this.TCCData[ nearestNeighborList[i][0] ].distance = path.apsSpent;
                 this.TCCData[ nearestNeighborList[i][0] ].path.push( currentSector ); 
+                this.TCCData[ nearestNeighborList[i][0] ].path.push( nearestNeighborList[i][0] ); 
                 // this.TCCData[ nearestNeighborList[i][0] ].jumps = 1;                
             }
             this.TCCData[ this.toSector ].visited = true;
-            var previousSector = this.toSector;
+            var previousWH;
 
             // Right, now we have the distance to the initial WHs, let's do Dijkstra Magic.
             while( !this.TCCData[ this.sector.sector ].visited ) {
@@ -724,30 +835,31 @@ SectorMap.prototype = {
                 
                 this.TCCData[ currentSector ].wh = processSector.call( 
                     this, this.TCCData[ currentSector ] );
+                console.log( currentSector, this.TCCData[ currentSector ].path );
 
-                previousSector = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 1 ]; 
-                //console.log( 'From: ' + previousSector + ' in: ' + currentSector );
+                previousWH = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 2 ]; 
+                console.log( 'From: ' + previousWH + ' in: ' + currentSector );
                 // now update distances and path.
-                let keys = Object.keys( this.TCCData[ currentSector ].wh[ previousSector ] );
+                let keys = Object.keys( this.TCCData[ currentSector ].wh[ previousWH ] );
 
                 for ( let i=0; i<keys.length; i++ ) {
-                    let skey = keys[i].replace(/ \(North\)| \(South\)| \(East\)| \(West\)/g,'');
-                    if ( this.TCCData[ skey ].distance 
+                    let toskey = keys[i].replace(/ \(North\)| \(South\)| \(East\)| \(West\)/g,'');
+                    if ( this.TCCData[ toskey ].distance 
                         > this.TCCData[ currentSector ].distance 
-                            + this.TCCData[ currentSector ].wh[ previousSector ][ keys[i] ].apsSpent ) {
+                            + this.TCCData[ currentSector ].wh[ previousWH ][ keys[i] ].apsSpent ) {
                         
-                        this.TCCData[ skey ].distance = this.TCCData[ currentSector ].distance 
-                            + this.TCCData[ currentSector ].wh[ previousSector ][ keys[i] ].apsSpent;
-                        this.TCCData[ skey ].path = this.TCCData[ previousSector ].path.concat( previousSector, keys[i] ); 
-                  //      console.log(this.TCCData[ skey ].path);
+                        this.TCCData[ toskey ].distance = this.TCCData[ currentSector ].distance 
+                            + this.TCCData[ currentSector ].wh[ previousWH ][ keys[i] ].apsSpent;
+  
+                        this.TCCData[ toskey ].path = this.TCCData[ currentSector ].path.concat( keys[i] ); 
                         }
                 }
                 
                 // and set the sector visited, and set our current the previous.
                 this.TCCData[ currentSector ].visited = true;
-                console.log(currentSector + ':'+JSON.stringify(this.TCCData[ currentSector].wh));
-                previousSector = this.TCCData[ currentSector ].wh [ currentSector ];
-            }
+                // console.log(currentSector + ':'+JSON.stringify(this.TCCData[ currentSector].wh));
+
+        }
         
         this.TCCData[ currentSector ].path.reverse().pop();
         let finalSector = this.TCCData[ currentSector ].path[0];
@@ -821,16 +933,6 @@ SectorMap.prototype = {
         }
 
         function specialTreatment() {
-            // Waayan
-            copySector.call( this, 'Waayan', 'Waayan (North)' );
-            delete this.TCCData[ 'Waayan (North)' ].beacons[ 'HC 4-962 (South)' ];
-            renameWH.call( this, 'Waayan (North)', 'HC 4-962 (North)', 'HC 4-962' );
-            copySector.call( this, 'Waayan', 'Waayan (South)' )
-            delete this.TCCData[ 'Waayan (South)' ].beacons[ 'HC 4-962 (North)' ];
-            renameWH.call( this, 'Waayan (South)', 'HC 4-962 (South)', 'HC 4-962' );
-            delete this.TCCData[ 'Waayan (South)' ].beacons[ 'JS 2-090' ];
-            delete this.TCCData[ 'Waayan' ];
-            renameWH.call( this, 'JS 2-090', 'Waayan', 'Waayan (North)' );
             
             // fixing NEX hubs.
             var nexList = [ 'Nex Kataam', 'Nex 0001', 'Nex 0002', 'Nex 0003',
@@ -854,46 +956,56 @@ SectorMap.prototype = {
                 }
                 delete this.TCCData[ element ].beacons[ 'Y-hole' ];
             }.bind(this) );
-            // Betelgeuse
-            copySector.call( this, 'Betelgeuse', 'Betelgeuse (West)' );
-            delete this.TCCData[ 'Betelgeuse (West)' ].beacons[ 'Sohoa' ];
-            delete this.TCCData[ 'Betelgeuse (West)' ].beacons[ 'Tiacan' ];
-            copySector.call( this, 'Betelgeuse', 'Betelgeuse (East)' );
-            delete this.TCCData[ 'Betelgeuse (East)' ].beacons[ 'GV 4-652' ];
-            delete this.TCCData[ 'Betelgeuse (East)' ].beacons[ 'Rashkan' ];
-            delete this.TCCData[ 'Betelgeuse' ];
-            // SD
-            copySector.call( this, 'SD 3-562', 'SD 3-562 (West)' );
-            delete this.TCCData[ 'SD 3-562 (West)' ].beacons[ 'Ross (East)' ];
-            renameWH.call( this, 'Pass FED-06', 'SD 3-562', 'SD 3-562 (West)' );      
-            copySector.call( this, 'SD 3-562', 'SD 3-562 (East)' );            
-            renameWH.call( this, 'SD 3-562 (East)', 'Ross (East)', 'Ross' );
-            delete this.TCCData[ 'SD 3-562 (East)' ].beacons[ 'Pass FED-06' ];
-            delete this.TCCData[ 'SD 3-562' ];
-            // Facece
-            copySector.call( this, 'Facece', 'Facece (North)' );
-            renameWH.call( this, 'Sodaack', 'Facece', 'Facece (North)' );
-            renameWH.call( this, 'Lahola', 'Facece', 'Facece (North)' );
-            copySector.call( this, 'Facece', 'Facece (South)' );
-            delete this.TCCData[ 'Facece' ];
-            // Heze
-            copySector.call( this, 'Heze', 'Heze (North)' );
-            renameWH.call( this, 'Heze', 'Nari (North)', 'Nari' );
-            delete this.TCCData[ 'Heze (North)' ].beacons[ 'Nari (South)' ];
-            delete this.TCCData[ 'Heze (North)' ].beacons[ 'Nunki' ];
-            copySector.call( this, 'Heze', 'Heze (South)' );
-            delete this.TCCData[ 'Heze (South)' ].beacons[ 'Nari (North)' ];
-            delete this.TCCData[ 'Heze (South)' ].beacons[ 'Procyon' ];
-            delete this.TCCData[ 'Heze' ];
-            // Pardus
-            // copySector.call( this, 'Pardus', 'Pardus (West)' );
-            // copySector.call( this, 'Pardus', 'Pardus (Center)' );
-            // copySector.call( this, 'Pardus', 'Pardus (East)' );
-            // delete this.TCCData[ 'Pardus' ];          
-            // Paan. Fuck Paan. Who goes there anyway.
-            delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner West)' ];
-            delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner East)' ];
-            // Miayda
+            // // Waayan
+            // copySector.call( this, 'Waayan', 'Waayan (North)' );
+            // delete this.TCCData[ 'Waayan (North)' ].beacons[ 'HC 4-962 (South)' ];
+            // renameWH.call( this, 'Waayan (North)', 'HC 4-962 (North)', 'HC 4-962' );
+            // copySector.call( this, 'Waayan', 'Waayan (South)' )
+            // delete this.TCCData[ 'Waayan (South)' ].beacons[ 'HC 4-962 (North)' ];
+            // renameWH.call( this, 'Waayan (South)', 'HC 4-962 (South)', 'HC 4-962' );
+            // delete this.TCCData[ 'Waayan (South)' ].beacons[ 'JS 2-090' ];
+            // delete this.TCCData[ 'Waayan' ];
+            // renameWH.call( this, 'JS 2-090', 'Waayan', 'Waayan (North)' );
+            // // Betelgeuse
+            // copySector.call( this, 'Betelgeuse', 'Betelgeuse (West)' );
+            // delete this.TCCData[ 'Betelgeuse (West)' ].beacons[ 'Sohoa' ];
+            // delete this.TCCData[ 'Betelgeuse (West)' ].beacons[ 'Tiacan' ];
+            // copySector.call( this, 'Betelgeuse', 'Betelgeuse (East)' );
+            // delete this.TCCData[ 'Betelgeuse (East)' ].beacons[ 'GV 4-652' ];
+            // delete this.TCCData[ 'Betelgeuse (East)' ].beacons[ 'Rashkan' ];
+            // delete this.TCCData[ 'Betelgeuse' ];
+            // // SD
+            // // copySector.call( this, 'SD 3-562', 'SD 3-562 (W)' );
+            // // delete this.TCCData[ 'SD 3-562 (W)' ].beacons[ 'Ross (E)' ];
+            // // renameWH.call( this, 'Pass FED-06', 'SD 3-562', 'SD 3-562 (W)' );      
+            // // copySector.call( this, 'SD 3-562', 'SD 3-562 (E)' );            
+            // // renameWH.call( this, 'SD 3-562 (E)', 'Ross (E)', 'Ross' );
+            // // delete this.TCCData[ 'SD 3-562 (E)' ].beacons[ 'Pass FED-06' ];
+            // // delete this.TCCData[ 'SD 3-562' ];
+            // // Facece
+            // copySector.call( this, 'Facece', 'Facece (North)' );
+            // renameWH.call( this, 'Sodaack', 'Facece', 'Facece (North)' );
+            // renameWH.call( this, 'Lahola', 'Facece', 'Facece (North)' );
+            // copySector.call( this, 'Facece', 'Facece (South)' );
+            // delete this.TCCData[ 'Facece' ];
+            // // Heze
+            // copySector.call( this, 'Heze', 'Heze (North)' );
+            // renameWH.call( this, 'Heze', 'Nari (North)', 'Nari' );
+            // delete this.TCCData[ 'Heze (North)' ].beacons[ 'Nari (South)' ];
+            // delete this.TCCData[ 'Heze (North)' ].beacons[ 'Nunki' ];
+            // copySector.call( this, 'Heze', 'Heze (South)' );
+            // delete this.TCCData[ 'Heze (South)' ].beacons[ 'Nari (North)' ];
+            // delete this.TCCData[ 'Heze (South)' ].beacons[ 'Procyon' ];
+            // delete this.TCCData[ 'Heze' ];
+            // // Pardus
+            // // copySector.call( this, 'Pardus', 'Pardus (West)' );
+            // // copySector.call( this, 'Pardus', 'Pardus (Center)' );
+            // // copySector.call( this, 'Pardus', 'Pardus (East)' );
+            // // delete this.TCCData[ 'Pardus' ];          
+            // // Paan. Fuck Paan. Who goes there anyway.
+            // delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner West)' ];
+            // delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner East)' ];
+            // // Miayda
             // this.TCCData[ 'Miayda (North)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Miayda' ] ));
             // this.TCCData[ 'Miayda (North)' ].distance = Infinity;
             // this.TCCData[ 'Miayda (North)' ].sector = 'Miayda (North)';
