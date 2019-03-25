@@ -376,6 +376,9 @@ SectorMap.prototype = {
         
 		this.drawSavedPath(this.get2DContext());
 		this.markShipTile(this.get2DContext());
+        if (path.apsSpent === Infinity) {
+            path.apsSpent = "&infin;"; //prettier.
+        }
 		this.distanceDiv.innerHTML = "Distance to " + this.sector.sector 
             + " [" + loc.x + ", " + loc.y + "]: " 
             + path.apsSpent 
@@ -410,7 +413,7 @@ SectorMap.prototype = {
     planPath: function calcPath( end, start, sector ) {
 		var map = [];
         var speed = this.getSpeed();
-		// parsing from Sweetener to VMAP
+		// parsing from Sweetener to VMAP 
 		sector.t = sector.tiles;
 		sector.w = sector.width;
 		sector.h = sector.height;
@@ -464,11 +467,11 @@ SectorMap.prototype = {
                 .sort( function compare(a ,b) {
                 return map[ a ].distance - map[ b ].distance;
 				});
-            console.log(newList.length);
-         //   if (newList.length === 0) {
+
+            if (newList.length === 0) {
                 // no new list? We're at the end of the line. Unreachable!
-           //     break;
-        //    }
+                return { path: {}, apsSpent: Infinity }
+            }
 			curList = newList;
 		}
 		
@@ -779,7 +782,6 @@ SectorMap.prototype = {
 			this.TCCData[ sector.sector ].distance = Infinity;
 			this.TCCData[ sector.sector ].visited = false;
 			this.TCCData[ sector.sector ].path = [];
-            // this.TCCData[ sector.sector ].jumps = 0;
             if ( Object.keys(this.TCCData).length === this.TCCLength ) {
                 specialTreatment.call(this);
                 gotData.call(this);
@@ -795,21 +797,13 @@ SectorMap.prototype = {
             5. If the destination node has been marked visited (when planning a route between two specific nodes) or if the smallest tentative distance among the nodes in the unvisited set is infinity (when planning a complete traversal; occurs when there is no connection between the initial node and remaining unvisited nodes), then stop. The algorithm has finished.
             6. Otherwise, select the unvisited node that is marked with the smallest tentative distance, set it as the new "current node", and go back to step 3.
             */
-            
-            // console.log(this.TCCData);
-            // this.TCCData[ this.sector.sector ] = this.sector;            
-  			// this.TCCData[ this.sector.sector ].distance = Infinity;
-			// this.TCCData[ this.sector.sector ].visited = false;
-			// this.TCCData[ this.sector.sector ].path = -1;
-            
+           
             // first go from the toLoc to the wormholes.
             let currentSector = this.toSector;
             let nearestNeighborList = Object.entries( this.TCCData[ this.toSector ].beacons ).filter( 
                 function( value, index, arr ) {
                     return value[1].type === 'wh' || value[1].type === 'xh'
                 } );
-
-            //this.TCCData[ this.toSector ].path = [ this.toSector ];
    
             for ( var i=0; i<nearestNeighborList.length; i++ ) {
                 let path = this.planPath( 
@@ -821,10 +815,9 @@ SectorMap.prototype = {
                 this.TCCData[ nearestNeighborList[i][0] ].distance = path.apsSpent;
                 this.TCCData[ nearestNeighborList[i][0] ].path.push( currentSector ); 
                 this.TCCData[ nearestNeighborList[i][0] ].path.push( nearestNeighborList[i][0] ); 
-                // this.TCCData[ nearestNeighborList[i][0] ].jumps = 1;                
             }
             this.TCCData[ this.toSector ].visited = true;
-            var previousWH;
+            var previousWH, currentWH, NSEW = RegExp( / \(North\)| \(South\)| \(East\)| \(West\)/ );
 
             // Right, now we have the distance to the initial WHs, let's do Dijkstra Magic.
             while( !this.TCCData[ this.sector.sector ].visited ) {
@@ -836,18 +829,41 @@ SectorMap.prototype = {
                     } ).sort( function( a, b ) {
                         return a[1].distance - b[1].distance;
                     })[0][0];
-                
-                this.TCCData[ currentSector ].wh = processSector.call( 
-                    this, this.TCCData[ currentSector ] );
-                console.log( currentSector, this.TCCData[ currentSector ].path );
-
+                            
                 previousWH = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 2 ]; 
-                console.log( 'From: ' + previousWH + ' in: ' + currentSector );
+                currentWH = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 1 ];
+                // console.log( 'From: ' + previousWH + ' in: ' + currentSector );
+                
+                
+                // ok we do some trickery to get our north/south wormholes 
+                // connecting to eachother. First we add the NSEW to our previous
+                // WH, if our currentWH has it. 
+                // If not and we just left a split sector, we could get in 
+                // trouble with the previousWH placement, so we do a double try/catch
+                // where we circumvent this.
+                if ( NSEW.exec( currentWH ) ) {
+                    previousWH += currentWH.replace( currentSector, '' );
+                    }
+                
+                // let's get the distance from our current WH to the next ones.
+                this.TCCData[ currentSector ].wh = processSector.call( 
+                    this, this.TCCData[ currentSector ], previousWH );               
+               
+                // get all the keys to update distances (also see above):                
+                try {
+                    var keys = Object.keys( this.TCCData[ currentSector ].wh[ previousWH ] );
+                } catch (e) {
+                    try {
+                        previousWH = previousWH.replace( NSEW, '' );
+                        var keys = Object.keys( this.TCCData[ currentSector ].wh[ previousWH ] );
+                    } catch (e) {
+                        throw e;
+                    }
+                }
+                    
                 // now update distances and path.
-                let keys = Object.keys( this.TCCData[ currentSector ].wh[ previousWH ] );
-
                 for ( let i=0; i<keys.length; i++ ) {
-                    let toskey = keys[i].replace(/ \(North\)| \(South\)| \(East\)| \(West\)/g,'');
+                    let toskey = keys[i].replace( NSEW ,'');
                     if ( this.TCCData[ toskey ].distance 
                         > this.TCCData[ currentSector ].distance 
                             + this.TCCData[ currentSector ].wh[ previousWH ][ keys[i] ].apsSpent ) {
@@ -865,14 +881,14 @@ SectorMap.prototype = {
 
         }
         
-        this.TCCData[ currentSector ].path.reverse().pop();
-        let finalSector = this.TCCData[ currentSector ].path[0];
-        console.log(finalSector);
+        this.TCCData[ currentSector ].path.reverse()
+        let finalWH = this.TCCData[ currentSector ].path[1];
+
         var finalPath = this.planPath( {
-            'x': this.TCCData[ this.sector.sector ].beacons[ finalSector ].x , 
-            'y': this.TCCData[ this.sector.sector ].beacons[ finalSector ].y 
+            'x': this.TCCData[ this.sector.sector ].beacons[ finalWH ].x , 
+            'y': this.TCCData[ this.sector.sector ].beacons[ finalWH ].y 
             } , { 'x': this.shipX, 'y': this.shipY }, this.sector );
-        console.log(  finalPath );
+        
         div.appendChild( document.createElement( 'br' ) );
         div.appendChild( document.createTextNode (
             JSON.stringify(this.TCCData[ currentSector ].path )));
@@ -881,13 +897,16 @@ SectorMap.prototype = {
             ( this.TCCData[ currentSector ].distance + finalPath.apsSpent ) ) );
         }
         
-        function processSector( sector ) {
+        function processSector( sector, currentWH ) {
             var path = {};
+            var startWH = sector.beacons[ currentWH ];
+
             // get rid of non wh/xh beacons
-            // console.log(sector.sector, sector.beacons);
             let beacons = Object.entries( sector.beacons ).filter( 
                 function( value, index, arr ) {
-                    return value[1].type === 'wh' || value[1].type === 'xh'
+                    console.log( value,index,arr);
+                    return ( value[1].type === 'wh' || value[1].type === 'xh' )
+                        && ( value[0] !== currentWH );
                 } );
             beacons.sort();
             
@@ -895,27 +914,26 @@ SectorMap.prototype = {
             // dictionary { whname : { towhname { 'path', 'apsSpent' } } }.
             // so for example path.Beethi.Canexin gives the path and apsSpent
             // going from Beethi to Canexin.
-            // Note: we have to calculate both ways, so B -> C and C -> B, 
-            // in the case start tiles are different, the apsSpent will vary.
-            for ( var i=0; i<beacons.length; i++ ) {
-                path[ beacons[i][0] ] = {};
-                for (var j=0; j < beacons.length ; j++) {
-                    if (j===i || beacons[i][0] == beacons[j][0]) // no need for self to self.
-                        continue;
-                    path[ beacons[i][0] ][ beacons[j][0] ] = this.planPath( 
-                        { // since we plan backwards, our from WH will be our to WH
-                            'x': beacons[i][1].x,
-                            'y': beacons[i][1].y 
-                        }, 
-                        {
-                            'x': beacons[j][1].x,
-                            'y': beacons[j][1].y 
+            
+            // for ( var i=0; i<beacons.length; i++ ) {
+            path[ currentWH ] = {};
+            for (var j=0; j < beacons.length ; j++) {
+                // if (j===i || beacons[i][0] == beacons[j][0]) // no need for self to self.
+                    // continue;
+                path[ currentWH ][ beacons[j][0] ] = this.planPath( 
+                    { // since we plan backwards, our from WH will be our to WH
+                        'x': startWH.x,
+                        'y': startWH.y 
+                    }, 
+                    {
+                        'x': beacons[j][1].x,
+                        'y': beacons[j][1].y 
 
-                        },
-                        sector );
-                    path[ beacons[i][0] ][ beacons[j][0] ].apsSpent += this.TCCWHcost[ beacons[j][1].type ];
-                }
+                    },
+                    sector );
+                path[ currentWH ][ beacons[j][0] ].apsSpent += this.TCCWHcost[ beacons[j][1].type ];
             }
+            // }
             
             // var sectorNZ = [ [ 'Bewaack','Miayda' ], [ 'Miayda', 'Bewaack' ] ];
             // for (var i = 0; i<sectorNZ.length; i++) {
