@@ -701,7 +701,7 @@ SectorMap.prototype = {
             }
             selectNode.add( opt );
         }
-        selectNode.value = 'Iozeio';//'Zeaex';
+        selectNode.value = 'Besoex';//'Iozeio';//'Zeaex';
         this.distanceDiv.parentNode.appendChild( div );
         // selectNode.addEventListener( 'change', chosenSector );
         // function chosenSector() {
@@ -832,8 +832,7 @@ SectorMap.prototype = {
                             
                 previousWH = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 2 ]; 
                 currentWH = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 1 ];
-                // console.log( 'From: ' + previousWH + ' in: ' + currentSector );
-                
+                console.log( 'From: ' + previousWH + ' in: ' + currentSector );
                 
                 // ok we do some trickery to get our north/south wormholes 
                 // connecting to eachother. First we add the NSEW to our previous
@@ -864,6 +863,7 @@ SectorMap.prototype = {
                 // now update distances and path.
                 for ( let i=0; i<keys.length; i++ ) {
                     let toskey = keys[i].replace( NSEW ,'');
+                    console.log(toskey, keys[i]);
                     if ( this.TCCData[ toskey ].distance 
                         > this.TCCData[ currentSector ].distance 
                             + this.TCCData[ currentSector ].wh[ previousWH ][ keys[i] ].apsSpent ) {
@@ -904,7 +904,6 @@ SectorMap.prototype = {
             // get rid of non wh/xh beacons
             let beacons = Object.entries( sector.beacons ).filter( 
                 function( value, index, arr ) {
-                    console.log( value,index,arr);
                     return ( value[1].type === 'wh' || value[1].type === 'xh' )
                         && ( value[0] !== currentWH );
                 } );
@@ -956,9 +955,125 @@ SectorMap.prototype = {
 
         function specialTreatment() {
             
+            // Regulus
+            copySector.call( this, 'Regulus', 'Regulus (SW)' );
+            delete this.TCCData[ 'Regulus' ].beacons[ 'Aeg' ];
+            delete this.TCCData[ 'Regulus (SW)' ].beacons[ 'Cassand' ];
+            delete this.TCCData[ 'Regulus (SW)' ].beacons[ 'SZ 4-419' ];
+            delete this.TCCData[ 'Regulus (SW)' ].beacons[ 'Greandin' ];
+            // Waayan
+            copySector.call( this, 'Waayan', 'Waayan (N)' );
+            delete this.TCCData[ 'Waayan (N)' ].beacons[ 'HC 4-962 (South)' ];
+            renameWH.call( this, 'Waayan (N)', 'HC 4-962 (North)', 'HC 4-962' );
+            copySector.call( this, 'Waayan', 'Waayan (S)' )
+            delete this.TCCData[ 'Waayan (S)' ].beacons[ 'HC 4-962 (North)' ];
+            renameWH.call( this, 'Waayan (S)', 'HC 4-962 (South)', 'HC 4-962' );
+            delete this.TCCData[ 'Waayan (S)' ].beacons[ 'JS 2-090' ];
+            delete this.TCCData[ 'Waayan' ];
+            renameWH.call( this, 'JS 2-090', 'Waayan', 'Waayan (N)' );
+            // Betelgeuse
+            copySector.call( this, 'Betelgeuse', 'Betelgeuse (W)' );
+            delete this.TCCData[ 'Betelgeuse (W)' ].beacons[ 'Sohoa' ];
+            delete this.TCCData[ 'Betelgeuse (W)' ].beacons[ 'Tiacan' ];
+            renameWH.call( this, 'Rashkan', 'Betelgeuse (West)', 'Betelgeuse (W)' );
+            renameWH.call( this, 'GV 4-652', 'Betelgeuse (West)', 'Betelgeuse (W)' );
+            copySector.call( this, 'Betelgeuse', 'Betelgeuse (E)' );
+            delete this.TCCData[ 'Betelgeuse (E)' ].beacons[ 'GV 4-652' ];
+            delete this.TCCData[ 'Betelgeuse (E)' ].beacons[ 'Rashkan' ];
+            renameWH.call( this, 'Sohoa', 'Betelgeuse (East)', 'Betelgeuse (E)' );
+            renameWH.call( this, 'Tiacan', 'Betelgeuse (East)', 'Betelgeuse (E)' );
+            delete this.TCCData[ 'Betelgeuse' ];
+            // SD
+            copySector.call( this, 'SD 3-562', 'SD 3-562 (W)' );
+            delete this.TCCData[ 'SD 3-562 (W)' ].beacons[ 'Ross (East)' ];
+            renameWH.call( this, 'Pass FED-06', 'SD 3-562 (West)', 'SD 3-562 (W)' );      
+            copySector.call( this, 'SD 3-562', 'SD 3-562 (E)' );            
+            renameWH.call( this, 'SD 3-562 (E)', 'Ross (East)', 'Ross' );
+            delete this.TCCData[ 'SD 3-562 (E)' ].beacons[ 'Pass FED-06' ];
+            delete this.TCCData[ 'SD 3-562' ];
+            // Facece
+            copySector.call( this, 'Facece', 'Facece (N)' );
+            renameWH.call( this, 'Sodaack', 'Facece', 'Facece (N)' );
+            renameWH.call( this, 'Lahola', 'Facece', 'Facece (N)' );
+            copySector.call( this, 'Facece', 'Facece (S)' );
+            renameWH.call( this, 'Ophiuchi', 'Facece (South)', 'Facece (S)' );
+            delete this.TCCData[ 'Facece' ];
+            // Heze
+            copySector.call( this, 'Heze', 'Heze (N)' );
+            renameWH.call( this, 'Heze (N)', 'Nari (North)', 'Nari' );
+            renameWH.call( this, 'Nari', 'Heze (North)', 'Heze (N)' );
+            delete this.TCCData[ 'Heze (N)' ].beacons[ 'Nari (South)' ];
+            delete this.TCCData[ 'Heze (N)' ].beacons[ 'Nunki' ];
+            copySector.call( this, 'Heze', 'Heze (S)' );
+            delete this.TCCData[ 'Heze (S)' ].beacons[ 'Nari (North)' ];
+            delete this.TCCData[ 'Heze (S)' ].beacons[ 'Procyon' ];
+            renameWH.call( this, 'Nari', 'Heze (South)', 'Heze (S)' );
+            renameWH.call( this, 'Nunki', 'Heze (South)', 'Heze (S)' );
+            delete this.TCCData[ 'Heze' ];
+            // Nex0004
+            copySector.call( this, 'Nex 0004', 'Nex 0004 (N)' );
+            delete this.TCCData[ 'Nex 0004 (N)' ].beacons[ 'Nex 0004 (West)' ];
+            delete this.TCCData[ 'Nex 0004 (N)' ].beacons[ 'Nex 0004 (East)' ];
+            delete this.TCCData[ 'Nex 0004 (N)' ].beacons[ 'X-hole' ];
+            renameWH.call( this, 'Nex 0004 (N)', 'Nex 0004 (SW)', 'Nex 0004 (S) (West)' );
+            renameWH.call( this, 'Nex 0004 (N)', 'Nex 0004 (SE)', 'Nex 0004 (S) (East)' );
+            renameWH.call( this, 'Mebsuta', 'Nex 0004', 'Nex 0004 (N)' );
+            renameWH.call( this, 'HW 3-863', 'Nex 0004', 'Nex 0004 (N)' );
+            copySector.call( this, 'Nex 0004', 'Nex 0004 (S)' );
+            delete this.TCCData[ 'Nex 0004 (S)' ].beacons[ 'Nex 0004 (SW)' ];
+            delete this.TCCData[ 'Nex 0004 (S)' ].beacons[ 'Nex 0004 (SE)' ];
+            delete this.TCCData[ 'Nex 0004 (S)' ].beacons[ 'Mebsuta' ];
+            delete this.TCCData[ 'Nex 0004 (S)' ].beacons[ 'HW 3-863' ];
+            renameWH.call( this, 'Nex 0004 (S)', 'Nex 0004 (West)', 'Nex 0004 (N) (West)' );
+            renameWH.call( this, 'Nex 0004 (S)', 'Nex 0004 (East)', 'Nex 0004 (N) (West)' );
+            delete this.TCCData[ 'Nex 0004' ];
+            // Pardus
+            copySector.call( this, 'Pardus', 'Pardus (W)' );
+            delete this.TCCData[ 'Pardus (W)' ].beacons[ 'Quaack' ];
+            delete this.TCCData[ 'Pardus (W)' ].beacons[ 'Procyon' ];
+            delete this.TCCData[ 'Pardus (W)' ].beacons[ 'Nhandu' ];
+            renameWH.call ( this, 'Enif', 'Pardus (West)', 'Pardus (W)' );
+            renameWH.call ( this, 'Pardus (W)', 'Pardus (36,16)', 'Pardus (C) (North)' );
+            renameWH.call ( this, 'Pardus (W)', 'Pardus (17,54)', 'Pardus (C) (South)' );
+            delete this.TCCData[ 'Pardus (W)' ].beacons[ 'Pardus (87,6)' ];
+            delete this.TCCData[ 'Pardus (W)' ].beacons[ 'Pardus (89,8)' ];
+            delete this.TCCData[ 'Pardus (W)' ].beacons[ 'Pardus (38,15)' ];
+            delete this.TCCData[ 'Pardus (W)' ].beacons[ 'Pardus (16,60)' ];
+      
+            copySector.call( this, 'Pardus', 'Pardus (C)' );
+            delete this.TCCData[ 'Pardus (C)' ].beacons[ 'Enif' ];
+            delete this.TCCData[ 'Pardus (C)' ].beacons[ 'Nhandu' ];
+            renameWH.call ( this, 'Quaack', 'Pardus (North)', 'Pardus (C)' );
+            renameWH.call ( this, 'Nhandu', 'Pardus (South)', 'Pardus (C)' );
+            renameWH.call ( this, 'Pardus (C)', 'Pardus (38,15)', 'Pardus (W) (North)' );
+            renameWH.call ( this, 'Pardus (C)', 'Pardus (16,60)', 'Pardus (W) (South)' );
+            renameWH.call ( this, 'Pardus (C)', 'Pardus (87,6)', 'Pardus (E)' );
+            delete this.TCCData[ 'Pardus (C)' ].beacons[ 'Pardus (36,16)' ];
+            delete this.TCCData[ 'Pardus (C)' ].beacons[ 'Pardus (17,54)' ];
+            delete this.TCCData[ 'Pardus (C)' ].beacons[ 'Pardus (89,8)' ];
+
+            copySector.call( this, 'Pardus', 'Pardus (E)' );
+            delete this.TCCData[ 'Pardus (E)' ].beacons[ 'Enif' ];
+            delete this.TCCData[ 'Pardus (E)' ].beacons[ 'Quaack' ];
+            delete this.TCCData[ 'Pardus (E)' ].beacons[ 'Procyon' ];
+            renameWH.call ( this, 'Nhandu', 'Pardus (NE)', 'Pardus (E)' );
+
+            renameWH.call ( this, 'Pardus (E)', 'Pardus (89,8)', 'Pardus (C)' );
+            delete this.TCCData[ 'Pardus (E)' ].beacons[ 'Pardus (87,6)' ];
+            delete this.TCCData[ 'Pardus (E)' ].beacons[ 'Pardus (36,16)' ];
+            delete this.TCCData[ 'Pardus (E)' ].beacons[ 'Pardus (38,15)' ];
+            delete this.TCCData[ 'Pardus (E)' ].beacons[ 'Pardus (16,60)' ];
+            delete this.TCCData[ 'Pardus (E)' ].beacons[ 'Pardus (17,54)' ];
+            
+            delete this.TCCData[ 'Pardus' ];
+            // Paan. Fuck Paan. Who goes there anyway.
+            delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner West)' ];
+            delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner East)' ];
+
+            
             // fixing NEX hubs.
             var nexList = [ 'Nex Kataam', 'Nex 0001', 'Nex 0002', 'Nex 0003',
-            'Nex 0004', 'Nex 0005', 'Nex 0006' ];
+            'Nex 0004 (S)', 'Nex 0005', 'Nex 0006' ];
             nexList.forEach( function( element ) {
                 for (var i=0; i<nexList.length; i++) {
                     if ( nexList[i] === element )
@@ -978,72 +1093,7 @@ SectorMap.prototype = {
                 }
                 delete this.TCCData[ element ].beacons[ 'Y-hole' ];
             }.bind(this) );
-            // // Waayan
-            // copySector.call( this, 'Waayan', 'Waayan (North)' );
-            // delete this.TCCData[ 'Waayan (North)' ].beacons[ 'HC 4-962 (South)' ];
-            // renameWH.call( this, 'Waayan (North)', 'HC 4-962 (North)', 'HC 4-962' );
-            // copySector.call( this, 'Waayan', 'Waayan (South)' )
-            // delete this.TCCData[ 'Waayan (South)' ].beacons[ 'HC 4-962 (North)' ];
-            // renameWH.call( this, 'Waayan (South)', 'HC 4-962 (South)', 'HC 4-962' );
-            // delete this.TCCData[ 'Waayan (South)' ].beacons[ 'JS 2-090' ];
-            // delete this.TCCData[ 'Waayan' ];
-            // renameWH.call( this, 'JS 2-090', 'Waayan', 'Waayan (North)' );
-            // // Betelgeuse
-            // copySector.call( this, 'Betelgeuse', 'Betelgeuse (West)' );
-            // delete this.TCCData[ 'Betelgeuse (West)' ].beacons[ 'Sohoa' ];
-            // delete this.TCCData[ 'Betelgeuse (West)' ].beacons[ 'Tiacan' ];
-            // copySector.call( this, 'Betelgeuse', 'Betelgeuse (East)' );
-            // delete this.TCCData[ 'Betelgeuse (East)' ].beacons[ 'GV 4-652' ];
-            // delete this.TCCData[ 'Betelgeuse (East)' ].beacons[ 'Rashkan' ];
-            // delete this.TCCData[ 'Betelgeuse' ];
-            // // SD
-            // // copySector.call( this, 'SD 3-562', 'SD 3-562 (W)' );
-            // // delete this.TCCData[ 'SD 3-562 (W)' ].beacons[ 'Ross (E)' ];
-            // // renameWH.call( this, 'Pass FED-06', 'SD 3-562', 'SD 3-562 (W)' );      
-            // // copySector.call( this, 'SD 3-562', 'SD 3-562 (E)' );            
-            // // renameWH.call( this, 'SD 3-562 (E)', 'Ross (E)', 'Ross' );
-            // // delete this.TCCData[ 'SD 3-562 (E)' ].beacons[ 'Pass FED-06' ];
-            // // delete this.TCCData[ 'SD 3-562' ];
-            // // Facece
-            // copySector.call( this, 'Facece', 'Facece (North)' );
-            // renameWH.call( this, 'Sodaack', 'Facece', 'Facece (North)' );
-            // renameWH.call( this, 'Lahola', 'Facece', 'Facece (North)' );
-            // copySector.call( this, 'Facece', 'Facece (South)' );
-            // delete this.TCCData[ 'Facece' ];
-            // // Heze
-            // copySector.call( this, 'Heze', 'Heze (North)' );
-            // renameWH.call( this, 'Heze', 'Nari (North)', 'Nari' );
-            // delete this.TCCData[ 'Heze (North)' ].beacons[ 'Nari (South)' ];
-            // delete this.TCCData[ 'Heze (North)' ].beacons[ 'Nunki' ];
-            // copySector.call( this, 'Heze', 'Heze (South)' );
-            // delete this.TCCData[ 'Heze (South)' ].beacons[ 'Nari (North)' ];
-            // delete this.TCCData[ 'Heze (South)' ].beacons[ 'Procyon' ];
-            // delete this.TCCData[ 'Heze' ];
-            // // Pardus
-            // // copySector.call( this, 'Pardus', 'Pardus (West)' );
-            // // copySector.call( this, 'Pardus', 'Pardus (Center)' );
-            // // copySector.call( this, 'Pardus', 'Pardus (East)' );
-            // // delete this.TCCData[ 'Pardus' ];          
-            // // Paan. Fuck Paan. Who goes there anyway.
-            // delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner West)' ];
-            // delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner East)' ];
-            // // Miayda
-            // this.TCCData[ 'Miayda (North)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Miayda' ] ));
-            // this.TCCData[ 'Miayda (North)' ].distance = Infinity;
-            // this.TCCData[ 'Miayda (North)' ].sector = 'Miayda (North)';
-            // this.TCCData[ 'Miayda (South)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Miayda' ] ));
-            // this.TCCData[ 'Miayda (South)' ].distance = Infinity;
-            // this.TCCData[ 'Miayda (South)' ].sector = 'Miayda (South)';
-            // delete this.TCCData[ 'Miayda' ];
             
-            // bewaack
-            // this.TCCData[ 'Bewaack (North)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Bewaack' ] ));
-            // this.TCCData[ 'Bewaack (North)' ].distance = Infinity;
-            // this.TCCData[ 'Bewaack (North)' ].sector = 'Bewaack (North)';
-            // this.TCCData[ 'Bewaack (South)' ] = JSON.parse(JSON.stringify( this.TCCData[ 'Bewaack' ] ));
-            // this.TCCData[ 'Bewaack (South)' ].distance = Infinity;
-            // this.TCCData[ 'Bewaack (South)' ].sector = 'Bewaack (South)'; 
-            // delete this.TCCData[ 'Bewaack' ];
             function copySector( from, to ) {
                 this.TCCData[ to ] = JSON.parse(JSON.stringify( this.TCCData[ from ] ));
                 this.TCCData[ to ].distance = Infinity;
