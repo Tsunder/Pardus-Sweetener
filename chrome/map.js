@@ -178,6 +178,9 @@ SectorMap.prototype = {
 	// This draws the saved path, for if we navigate with the minimap locked
 	drawSavedPath: function ( ctx, path ) {
         if (!path) {
+             if (!this.savedPath || Object.keys(this.savedPath).length === 0)
+                return;
+
             this.savedPath.forEach(function (e) {
                 this.markTile(ctx, e[0], e[1], "#080");
             }.bind(this));
@@ -429,8 +432,8 @@ SectorMap.prototype = {
 		var endN = end.y * sector.w + end.x, 
 			startN = start.y * sector.w + start.x;
 		
-		if (map[startN].t === 'b' || map[endN] === 'b')
-			return;
+		if (map[startN].t === 'b' || map[endN].t === 'b')
+			return { path: {}, apsSpent: Infinity };
 
 		map[ endN ].distance = 0;
 		map[ endN ].steps = 0;
@@ -461,10 +464,11 @@ SectorMap.prototype = {
                 .sort( function compare(a ,b) {
                 return map[ a ].distance - map[ b ].distance;
 				});
-            if (newList.length === 0) {
+            console.log(newList.length);
+         //   if (newList.length === 0) {
                 // no new list? We're at the end of the line. Unreachable!
-                break;
-            }
+           //     break;
+        //    }
 			curList = newList;
 		}
 		
@@ -472,10 +476,10 @@ SectorMap.prototype = {
 		var tileID = startN;
 
 		for ( var i = 0; i < map[ startN ].steps + 1 ; i++ ) {
-			outputList[ i ] = { 'x': map[ tileID ].x , 'y': map[ tileID ].y };
+			outputList.push([ map[ tileID ].x , map[ tileID ].y ]);
 			tileID = map[ tileID ].path;
 		}
-		return { path: outputList, apsSpent: map[ endN ].distance };
+		return { path: outputList, apsSpent: map[ startN ].distance };
 		
 		function nearestNeighbours( sectorw, n ) {
 			var m, nnList = [];
