@@ -861,7 +861,7 @@ SectorMap.prototype = {
                         throw e;
                     }
                 }
-                    
+                console.log(previousWH);   
                 // now update distances and path.
                 for ( let i=0; i<keys.length; i++ ) {
                     let toskey = keys[i].replace( NSEW ,'');
@@ -916,11 +916,8 @@ SectorMap.prototype = {
             // so for example path.Beethi.Canexin gives the path and apsSpent
             // going from Beethi to Canexin.
             
-            // for ( var i=0; i<beacons.length; i++ ) {
             path[ currentWH ] = {};
             for (var j=0; j < beacons.length ; j++) {
-                // if (j===i || beacons[i][0] == beacons[j][0]) // no need for self to self.
-                    // continue;
                 path[ currentWH ][ beacons[j][0] ] = this.planPath( 
                     { // since we plan backwards, our from WH will be our to WH
                         'x': startWH.x,
@@ -934,7 +931,6 @@ SectorMap.prototype = {
                     sector );
                 path[ currentWH ][ beacons[j][0] ].apsSpent += this.TCCWHcost[ beacons[j][1].type ];
             }
-            // }
             
             // var sectorNZ = [ [ 'Bewaack','Miayda' ], [ 'Miayda', 'Bewaack' ] ];
             // for (var i = 0; i<sectorNZ.length; i++) {
@@ -988,10 +984,13 @@ SectorMap.prototype = {
             // SD
             copySector.call( this, 'SD 3-562', 'SD 3-562 (W)' );
             delete this.TCCData[ 'SD 3-562 (W)' ].beacons[ 'Ross (East)' ];
+            renameWH.call( this, 'SD 3-562 (W)', 'Ross (West)', 'Ross' );
             renameWH.call( this, 'Pass FED-06', 'SD 3-562 (West)', 'SD 3-562 (W)' );      
+            renameWH.call( this, 'Ross', 'SD 3-562 (West)', 'SD 3-562 (W)' );      
             copySector.call( this, 'SD 3-562', 'SD 3-562 (E)' );            
             renameWH.call( this, 'SD 3-562 (E)', 'Ross (East)', 'Ross' );
             delete this.TCCData[ 'SD 3-562 (E)' ].beacons[ 'Pass FED-06' ];
+            renameWH.call( this, 'Ross', 'SD 3-562 (East)', 'SD 3-562 (E)' );      
             delete this.TCCData[ 'SD 3-562' ];
             // Facece
             copySector.call( this, 'Facece', 'Facece (N)' );
@@ -1004,11 +1003,13 @@ SectorMap.prototype = {
             copySector.call( this, 'Heze', 'Heze (N)' );
             renameWH.call( this, 'Heze (N)', 'Nari (North)', 'Nari' );
             renameWH.call( this, 'Nari', 'Heze (North)', 'Heze (N)' );
+            renameWH.call (this, 'Procyon', 'Heze (North)', 'Heze (N)' );
             delete this.TCCData[ 'Heze (N)' ].beacons[ 'Nari (South)' ];
             delete this.TCCData[ 'Heze (N)' ].beacons[ 'Nunki' ];
             copySector.call( this, 'Heze', 'Heze (S)' );
             delete this.TCCData[ 'Heze (S)' ].beacons[ 'Nari (North)' ];
             delete this.TCCData[ 'Heze (S)' ].beacons[ 'Procyon' ];
+            renameWH.call( this, 'Heze (S)', 'Nari (South)', 'Nari' );
             renameWH.call( this, 'Nari', 'Heze (South)', 'Heze (S)' );
             renameWH.call( this, 'Nunki', 'Heze (South)', 'Heze (S)' );
             delete this.TCCData[ 'Heze' ];
@@ -1046,7 +1047,7 @@ SectorMap.prototype = {
             delete this.TCCData[ 'Pardus (C)' ].beacons[ 'Enif' ];
             delete this.TCCData[ 'Pardus (C)' ].beacons[ 'Nhandu' ];
             renameWH.call ( this, 'Quaack', 'Pardus (North)', 'Pardus (C)' );
-            renameWH.call ( this, 'Nhandu', 'Pardus (South)', 'Pardus (C)' );
+            renameWH.call ( this, 'Procyon', 'Pardus', 'Pardus (C)' );
             renameWH.call ( this, 'Pardus (C)', 'Pardus (38,15)', 'Pardus (W) (North)' );
             renameWH.call ( this, 'Pardus (C)', 'Pardus (16,60)', 'Pardus (W) (South)' );
             renameWH.call ( this, 'Pardus (C)', 'Pardus (87,6)', 'Pardus (E)' );
