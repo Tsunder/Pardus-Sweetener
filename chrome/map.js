@@ -834,7 +834,7 @@ SectorMap.prototype = {
                             
                 previousWH = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 2 ]; 
                 currentWH = this.TCCData[ currentSector ].path[ this.TCCData[ currentSector ].path.length - 1 ];
-                console.log( 'From: ' + previousWH + ' in: ' + currentSector );
+                console.log( 'From wormhole: ' + previousWH + ' in sector: ' + currentSector + ' on wormhole: ' + currentWH);
                 
                 // ok we do some trickery to get our north/south wormholes 
                 // connecting to eachother. First we add the NSEW to our previous
@@ -845,12 +845,17 @@ SectorMap.prototype = {
                 if ( NSEW.exec( currentWH ) ) {
                     previousWH += currentWH.replace( currentSector, '' );
                     }
+                // coming from Nex 4 to another nex is a special case.
+                if ((  currentSector.indexOf( 'Nex' ) !== -1 ) &&
+                    ( previousWH === 'Nex 0004 (S) (West)' || previousWH === 'Nex 0004 (S) (East)' )) {
+                    previousWH = 'Nex 0004 (S)';
+                }
                 
                 // let's get the distance from our current WH to the next ones.
                 this.TCCData[ currentSector ].wh = processSector.call( 
                     this, this.TCCData[ currentSector ], previousWH );               
                
-                // get all the keys to update distances (also see above):                
+                // get all the keys to update distances (also see above):  
                 try {
                     var keys = Object.keys( this.TCCData[ currentSector ].wh[ previousWH ] );
                 } catch (e) {
@@ -902,6 +907,9 @@ SectorMap.prototype = {
         function processSector( sector, currentWH ) {
             var path = {};
             var startWH = sector.beacons[ currentWH ];
+            if (!startWH) {
+                console.log( sector, currentWH );
+            }
 
             // get rid of non wh/xh beacons
             let beacons = Object.entries( sector.beacons ).filter( 
@@ -1069,6 +1077,23 @@ SectorMap.prototype = {
             delete this.TCCData[ 'Pardus (E)' ].beacons[ 'Pardus (17,54)' ];
             
             delete this.TCCData[ 'Pardus' ];
+            // PP 5-713
+            copySector.call( this, 'PP 5-713', 'PP 5-713 (W)' );
+            renameWH.call( this, 'Ladaen', 'PP 5-713 (West)', 'PP 5-173 (W)' );
+            renameWH.call( this, 'Edqueth', 'PP 5-713 (West)', 'PP 5-173 (W)' );
+            renameWH.call (this, 'Procyon', 'Heze (North)', 'Heze (N)' );
+            delete this.TCCData[ 'PP 5-713 (W)' ].beacons[ 'Ladaen (East)' ];
+            delete this.TCCData[ 'PP 5-713 (W)' ].beacons[ 'Pass EMP-07' ];
+            delete this.TCCData[ 'PP 5-713 (W)' ].beacons[ 'Oauress' ];
+            // TODO PP east 
+            /*copySector.call( this, 'PP 5-713', 'PP 5-713 (E)' );
+            delete this.TCCData[ 'Heze (S)' ].beacons[ 'Nari (North)' ];
+            delete this.TCCData[ 'Heze (S)' ].beacons[ 'Procyon' ];
+            renameWH.call( this, 'Heze (S)', 'Nari (South)', 'Nari' );
+            renameWH.call( this, 'Nari', 'Heze (South)', 'Heze (S)' );
+            renameWH.call( this, 'Nunki', 'Heze (South)', 'Heze (S)' );
+            delete this.TCCData[ 'Heze' ];            
+            */
             // Paan. Fuck Paan. Who goes there anyway.
             delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner West)' ];
             delete this.TCCData[ 'Paan' ].beacons[ 'Paan (Inner East)' ];
