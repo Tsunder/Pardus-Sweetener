@@ -120,33 +120,34 @@ Mission.parseMission = function( mission, premium, bbpage ) {
 	if ( premium ) {
         // premium bb or jobs page.
 		var data = mission.getElementsByTagName( 'td' );
-		output[ 'faction' ] = data[0].firstChild.src;
+		var syndicate_member_offset = data.length == 11 ? 1 : 0;
+		output[ 'faction' ] = data[0 + syndicate_member_offset].firstChild.src;
 		output[ 'faction' ] === undefined ? output[ 'faction' ] = 'n' : output[ 'faction' ] = output[ 'faction' ].split( /factions/g )[ 1 ][ 6 ];//check for neutral vs faction.
-		output[ 'type' ] = data[1].firstChild.title[ 0 ];
+		output[ 'type' ] = data[1 + syndicate_member_offset].firstChild.title[ 0 ];
 		
-		bbpage ? output[ 'timeLimit'] = parseInt( data[3].textContent ) : null;
+		bbpage ? output[ 'timeLimit'] = parseInt( data[3 + syndicate_member_offset].textContent ) : null;
 		
-		output[ 'sector'] = data[5].textContent;
-		output[ 'image' ] = data[1].firstChild.src;
+		output[ 'sector'] = data[5 + syndicate_member_offset].textContent;
+		output[ 'image' ] = data[1 + syndicate_member_offset].firstChild.src;
 		if ( output.sector !== '-' ) {  
-			output[ 'coords'] = data[6].textContent.split( /[\[,\]]/g );
+			output[ 'coords'] = data[6 + syndicate_member_offset].textContent.split( /[\[,\]]/g );
 			output[ 'coords'] = { 'x': parseInt( output[ 'coords'][1] ), 'y': parseInt( output[ 'coords'][2] ) }; //split coords in x and y.
 			output[ 'locId' ] = Sector.getLocation( Sector.getId( output.sector ), output.coords.x, output.coords.y );
 
 		} else {
 			output[ 'locId' ] = Mission.getLocIdFromImage( output.image );
 			if ( bbpage ) {
-				output[ 'amount' ] = parseInt( data[2].textContent );
+				output[ 'amount' ] = parseInt( data[2 + syndicate_member_offset].textContent );
 				output[ 'amountDone' ] = 0;
 			} else {
-				output[ 'amountDone' ] = parseInt( data[ 2 ].textContent.split( /\//g )[ 0 ] );
-				output[ 'amount' ] = parseInt( data[ 2 ].textContent.split( /\//g )[ 1 ] );
+				output[ 'amountDone' ] = parseInt( data[ 2  + syndicate_member_offset].textContent.split( /\//g )[ 0 ] );
+				output[ 'amount' ] = parseInt( data[ 2  + syndicate_member_offset].textContent.split( /\//g )[ 1 ] );
 			}	
 
 		}
-		output[ 'reward'] = parseInt( data[7].textContent.replace(/,/g,'') );
-		output[ 'deposit'] = parseInt( data[8].textContent.replace(/,/g,'') );
-		output[ 'id' ] = data[9].firstChild.id;
+		output[ 'reward'] = parseInt( data[7 + syndicate_member_offset].textContent.replace(/,/g,'') );
+		output[ 'deposit'] = parseInt( data[8 + syndicate_member_offset].textContent.replace(/,/g,'') );
+		output[ 'id' ] = data[9 + syndicate_member_offset].firstChild.id;
 	} else if ( bbpage ) {
 		//Non-premium bb page.
         
