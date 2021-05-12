@@ -160,14 +160,6 @@ Mission.parseMission = function( mission, premium, bbpage ) {
 		output[ 'deposit'] = parseInt( data[8 + syndicate_member_offset].textContent.replace(/,/g,'') );
         output[ 'id' ] = data[9 + syndicate_member_offset].firstChild.id;
         var CurrentDT = new Date();
-        var CurrentHours = CurrentDT.getHours();
-        var CurrentHoursS = ("0" + CurrentHours).slice(-2);
-        var CurrentMinutes = CurrentDT.getMinutes();
-        var CurrentMinutesS = ("0" + CurrentMinutes).slice(-2);
-        var CurrentSeconds = CurrentDT.getSeconds();
-        var CurrentSecondsS = ("0" + CurrentSeconds).slice(-2);
-        var CurrentTime = CurrentHoursS + ":" + CurrentMinutesS + ":" + CurrentSecondsS;
-        output[ 'acceptTime' ] = "Updated\n" + CurrentTime;
 	} else if ( bbpage ) {
 		//Non-premium bb page.
         
@@ -369,33 +361,8 @@ Mission.parseMission = function( mission, premium, bbpage ) {
                         );
             }
         }
-        var getbfLength = bf.length;
-        var bfLast = getbfLength - 1;
-        var bfAcceptTime = bf[bfLast].textContent;
-        var bfAcceptTimePreview = bfAcceptTime.slice(-8);
-        var bfAcceptTimeFinal = ('0'+bfAcceptTimePreview).slice(-8); //This code can be used to get the last "<b>" that contains AcceptTime
-/*        var CurrentDT = new Date();
-        var CurrentHours = CurrentDT.getHours();
-        var CurrentHoursS = ("0" + CurrentHours).slice(-2);
-        var CurrentMinutes = CurrentDT.getMinutes();
-        var CurrentMinutesS = ("0" + CurrentMinutes).slice(-2);
-        var CurrentSeconds = CurrentDT.getSeconds();
-        var CurrentSecondsS = ("0" + CurrentSeconds).slice(-2);
-        var CurrentTime = CurrentHoursS + ":" + CurrentMinutesS + ":" + CurrentSecondsS;*/ //This can give current time for an update.
-        output[ 'acceptTime' ] = "Started\n" + bfAcceptTimeFinal;
     }
 
-	if ( bbpage ) {
-        var d = new Date();   
-        var h1 = d.getHours();
-        var h = ('0'+ h1).slice(-2);
-        var m1 = d.getMinutes();
-        var m = ('0'+ m1).slice(-2);
-        var s1 = d.getSeconds();
-        var s = ('0'+ s1).slice(-2);
-        output[ 'acceptTime' ] = "Started\n" +  h + ":" + m + ":" + s;
-          }
-/*    console.log(output);*/
 	return output
 }
 
